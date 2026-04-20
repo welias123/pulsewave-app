@@ -1,0 +1,47 @@
+{
+  "name": "pulsewave",
+  "version": "1.0.0",
+  "description": "Your music, your way.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "setup": "node setup.js",
+    "build:win": "electron-builder --win --x64",
+    "build:linux": "electron-builder --linux --x64"
+  },
+  "dependencies": {
+    "electron-updater": "^6.1.7"
+  },
+  "devDependencies": {
+    "electron": "^29.1.4",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.pulsewave.app",
+    "productName": "Pulsewave",
+    "copyright": "Copyright © 2025 Pulsewave",
+    "files": ["main.js", "preload.js", "src/**/*", "bin/**/*"],
+    "publish": {
+      "provider": "github",
+      "owner": "welias123",
+      "repo": "pulsewave-app"
+    },
+    "win": {
+      "target": [{"target": "nsis", "arch": ["x64"]}],
+      "artifactName": "Pulsewave-Setup.exe"
+    },
+    "linux": {
+      "target": [{"target": "AppImage", "arch": ["x64"]}],
+      "artifactName": "Pulsewave-Linux.AppImage",
+      "category": "Audio"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": null,
+      "uninstallerIcon": null
+    }
+  }
+}

@@ -1,0 +1,39 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'           # triggers on: git tag v1.0.1 && git push --tags
+
+jobs:
+  build-windows:
+    name: Build Windows Installer
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Download yt-dlp
+        run: |
+          New-Item -ItemType Directory -Force -Path bin | Out-Null
+          $url = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
+          Invoke-WebRequest -Uri $url -OutFile "bin\yt-dlp.exe"
+          Write-Host "yt-dlp downloaded: $((Get-Item bin\yt-dlp.exe).Length / 1MB) MB"
+
+      - name: Build & Publish to GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:win -- --publish always
+
+      - name: Show release artifacts
+        run: Get-ChildItem dist -Recurse -Include "*.exe","*.yml" | Select-Object Name, Length

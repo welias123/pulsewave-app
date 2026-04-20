@@ -1,0 +1,433 @@
+// ── Pulsewave App Logic ──────────────────────────────────────────────────────
+
+let _userId   = null;
+let _username = null;
+let _playlists = [];
+let _searchTimeout = null;
+let _currentView = 'home';
+let _ctxTrack = null;
+let _atpTrack = null;
+
+const HOME_QUERIES = [
+  { label: 'Top Hits 2024', query: 'top hits 2024 official' },
+  { label: 'Chill Vibes',   query: 'chill lofi hip hop mix' },
+  { label: 'Pop Essentials',query: 'pop hits playlist 2024' },
+  { label: 'Hip-Hop',       query: 'best hip hop songs 2024' },
+  { label: 'Electronic',    query: 'best electronic music 2024' },
+];
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+
+window.addEventListener('DOMContentLoaded', () => {
+  initPlayer();
+  pw.onUserData(async (data) => {
+    _userId   = data.userId;
+    _username = data.username;
+    window._userId = _userId;
+    document.getElementById('user-name').textContent  = _username;
+    document.getElementById('user-avatar').textContent = _username[0].toUpperCase();
+    await loadPlaylists();
+    loadHome();
+  });
+
+  // Close context menu on click outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#ctx-menu')) hideCtxMenu();
+  });
+  document.addEventListener('contextmenu', (e) => e.preventDefault());
+});
+
+// ── Navigation ──────────────────────────────────────────────────────────────
+
+function navigate(view, el) {
+  _currentView = view;
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  if (el) el.classList.add('active');
+
+  // Deactivate sidebar playlists
+  document.querySelectorAll('.pl-sidebar-item').forEach(i => i.classList.remove('active'));
+
+  document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+  const target = document.getElementById(`view-${view}`);
+  if (target) { target.style.display = 'block'; target.classList.add('active'); }
+
+  if (view === 'search') {
+    document.getElementById('search-input').focus();
+    if (!target.innerHTML.trim()) renderSearchEmpty();
+  } else if (view === 'liked')   { refreshLikedView(); }
+  else if (view === 'history')   { refreshHistoryView(); }
+  else if (view === 'home')      { /* already loaded */ }
+}
+
+function navigateToPlaylist(playlistId) {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  document.querySelectorAll('.pl-sidebar-item').forEach(i => i.classList.remove('active'));
+  const el = document.querySelector(`.pl-sidebar-item[data-id="${playlistId}"]`);
+  if (el) el.classList.add('active');
+
+  document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+  const view = document.getElementById('view-playlist');
+  view.style.display = 'block';
+  view.classList.add('active');
+  _currentView = 'playlist';
+  loadPlaylistView(playlistId);
+}
+
+// ── Home ────────────────────────────────────────────────────────────────────
+
+async function loadHome() {
+  const view = document.getElementById('view-home');
+  view.innerHTML = `<h2 class="section-title">Good ${getGreeting()}, <span style="color:var(--yellow)">${_username}</span></h2>`;
+
+  for (const { label, query } of HOME_QUERIES) {
+    const sec = document.createElement('div');
+    sec.innerHTML = `<h3 class="section-title">${label}</h3><div class="card-grid" id="grid-${label.replace(/\s/g,'_')}">
+      ${Array(6).fill(0).map(() => `<div class="music-card"><div class="card-art skeleton" style="aspect-ratio:1"></div><div class="card-body"><div class="skeleton" style="height:13px;width:80%;margin-bottom:6px"></div><div class="skeleton" style="height:11px;width:60%"></div></div></div>`).join('')}
+    </div>`;
+    view.appendChild(sec);
+    loadSection(query, `grid-${label.replace(/\s/g,'_')}`);
+  }
+}
+
+async function loadSection(query, gridId) {
+  const res = await pw.search(query);
+  const grid = document.getElementById(gridId);
+  if (!grid) return;
+  if (!res.ok || !res.results?.length) { grid.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px">Could not load</p>'; return; }
+  grid.innerHTML = '';
+  res.results.slice(0, 6).forEach((track, i) => {
+    grid.appendChild(makeCard(track, res.results, i));
+  });
+}
+
+// ── Search ──────────────────────────────────────────────────────────────────
+
+function onSearchInput() {
+  clearTimeout(_searchTimeout);
+  const q = document.getElementById('search-input').value.trim();
+  if (!q) { renderSearchEmpty(); return; }
+  document.getElementById('search-spinner').style.display = '';
+  _searchTimeout = setTimeout(() => doSearch(q), 500);
+}
+
+function onSearchKey(e) {
+  if (e.key === 'Enter') {
+    clearTimeout(_searchTimeout);
+    const q = e.target.value.trim();
+    if (q) doSearch(q);
+  }
+}
+
+async function doSearch(q) {
+  navigate('search', null);
+  const view = document.getElementById('view-search');
+  view.innerHTML = `<h3 class="section-title">Results for "<span style="color:var(--yellow)">${esc(q)}</span>"</h3>
+    <div class="track-list">${Array(8).fill(0).map(() => skeletonRow()).join('')}</div>`;
+
+  const res = await pw.search(q);
+  document.getElementById('search-spinner').style.display = 'none';
+  if (!res.ok || !res.results?.length) {
+    view.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h3>No results found</h3><p>Try a different search term</p></div>`;
+    return;
+  }
+  view.innerHTML = `<h3 class="section-title">Results for "<span style="color:var(--yellow)">${esc(q)}</span>"<span class="section-sub">${res.results.length} songs</span></h3>
+    <div class="track-list">${res.results.map((t, i) => trackRowHTML(t, i, res.results)).join('')}</div>`;
+  bindTrackRows(view, res.results);
+}
+
+function renderSearchEmpty() {
+  document.getElementById('view-search').innerHTML = `
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <h3>Search for music</h3><p>Type an artist, song, or album name</p>
+    </div>`;
+}
+
+// ── Liked Songs ──────────────────────────────────────────────────────────────
+
+async function refreshLikedView() {
+  const view = document.getElementById('view-liked');
+  const songs = await pw.getLikedSongs(_userId);
+  if (!songs.length) {
+    view.innerHTML = `<h2 class="section-title">Liked Songs</h2><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg><h3>No liked songs yet</h3><p>Heart a track to save it here</p></div>`;
+    return;
+  }
+  const tracks = songs.map(s => ({ videoId: s.video_id, title: s.title, artist: s.artist, thumbnail: s.thumbnail, duration: s.duration }));
+  view.innerHTML = `<h2 class="section-title">Liked Songs <span class="section-sub">${tracks.length} songs</span></h2>
+    <div class="track-list">${tracks.map((t, i) => trackRowHTML(t, i, tracks)).join('')}</div>`;
+  bindTrackRows(view, tracks);
+}
+
+// ── History ──────────────────────────────────────────────────────────────────
+
+async function refreshHistoryView() {
+  const view = document.getElementById('view-history');
+  const rows = await pw.getHistory(_userId);
+  if (!rows.length) {
+    view.innerHTML = `<h2 class="section-title">Recently Played</h2><div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><h3>Nothing played yet</h3><p>Your listening history will appear here</p></div>`;
+    return;
+  }
+  const tracks = rows.map(s => ({ videoId: s.video_id, title: s.title, artist: s.artist, thumbnail: s.thumbnail, duration: s.duration }));
+  view.innerHTML = `<h2 class="section-title">Recently Played <span class="section-sub">${tracks.length} songs</span></h2>
+    <div class="track-list">${tracks.map((t, i) => trackRowHTML(t, i, tracks)).join('')}</div>`;
+  bindTrackRows(view, tracks);
+}
+
+// ── Playlists ─────────────────────────────────────────────────────────────────
+
+async function loadPlaylists() {
+  _playlists = await pw.getPlaylists(_userId);
+  renderSidebarPlaylists();
+}
+
+function renderSidebarPlaylists() {
+  const container = document.getElementById('sidebar-playlists');
+  if (!_playlists.length) {
+    container.innerHTML = `<div style="padding:8px 10px;font-size:12px;color:var(--muted2)">No playlists yet</div>`;
+    return;
+  }
+  container.innerHTML = _playlists.map(p => `
+    <div class="pl-sidebar-item" data-id="${p.id}" onclick="navigateToPlaylist(${p.id})">
+      <div class="pl-sidebar-icon">♪</div>
+      <span>${esc(p.name)}</span>
+      <span style="margin-left:auto;font-size:11px;color:var(--muted2)">${p.trackCount}</span>
+    </div>`).join('');
+}
+
+async function loadPlaylistView(playlistId) {
+  const pl = _playlists.find(p => p.id === playlistId);
+  const view = document.getElementById('view-playlist');
+  if (!pl) { view.innerHTML = '<p style="padding:20px;color:var(--muted)">Playlist not found</p>'; return; }
+
+  const rawTracks = await pw.getPlaylistTracks(playlistId);
+  const tracks = rawTracks.map(t => ({ videoId: t.video_id, title: t.title, artist: t.artist, thumbnail: t.thumbnail, duration: t.duration }));
+
+  view.innerHTML = `
+    <div class="pl-header">
+      <div class="pl-cover">♪</div>
+      <div class="pl-meta">
+        <p style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px">Playlist</p>
+        <h2>${esc(pl.name)}</h2>
+        <p>${tracks.length} songs</p>
+        <div class="pl-actions">
+          <button class="btn-pl-play" onclick="playAllPlaylist(${playlistId})">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Play All
+          </button>
+          <button class="btn-icon" onclick="showPlaylistMenu(event,${playlistId})" style="background:rgba(255,255,255,.07);border-radius:8px">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    ${tracks.length ? `<div class="track-list">${tracks.map((t, i) => trackRowHTML(t, i, tracks, { showRemove: playlistId })).join('')}</div>`
+      : `<div class="empty-state"><h3>Empty playlist</h3><p>Search for songs and add them here</p></div>`}
+  `;
+  bindTrackRows(view, tracks);
+}
+
+async function playAllPlaylist(playlistId) {
+  const rawTracks = await pw.getPlaylistTracks(playlistId);
+  if (!rawTracks.length) { showNotif('Playlist is empty'); return; }
+  const tracks = rawTracks.map(t => ({ videoId: t.video_id, title: t.title, artist: t.artist, thumbnail: t.thumbnail, duration: t.duration }));
+  playTrack(tracks[0], tracks, 0);
+}
+
+function showPlaylistMenu(e, playlistId) {
+  e.stopPropagation();
+  showCtxMenu(e.clientX, e.clientY, [
+    { label: '✏️ Rename', action: () => renamePlaylistPrompt(playlistId) },
+    { sep: true },
+    { label: '🗑️ Delete Playlist', danger: true, action: () => deletePlaylist(playlistId) },
+  ]);
+}
+
+async function deletePlaylist(playlistId) {
+  await pw.deletePlaylist(playlistId);
+  await loadPlaylists();
+  navigate('home', document.querySelector('.nav-item'));
+  showNotif('Playlist deleted');
+}
+
+function renamePlaylistPrompt(playlistId) {
+  const pl = _playlists.find(p => p.id === playlistId);
+  if (!pl) return;
+  document.getElementById('cpl-name').value = pl.name;
+  const modal = document.getElementById('modal-cpl');
+  modal.style.display = 'flex';
+  modal.dataset.renameId = playlistId;
+  document.getElementById('cpl-name').focus();
+}
+
+// ── Add to Playlist modal ──────────────────────────────────────────────────
+
+function openAddToPlaylistModal(track) {
+  _atpTrack = track;
+  const list = document.getElementById('atp-list');
+  if (!_playlists.length) {
+    list.innerHTML = `<p style="color:var(--muted);font-size:13px;padding:8px">No playlists yet</p>`;
+  } else {
+    list.innerHTML = _playlists.map(p => `
+      <div class="atp-item" onclick="addTrackToPlaylist(${p.id})">
+        <div class="pl-sidebar-icon">♪</div>
+        <span>${esc(p.name)}</span>
+        <span style="margin-left:auto;font-size:11px;color:var(--muted2)">${p.trackCount} songs</span>
+      </div>`).join('');
+  }
+  document.getElementById('modal-atp').style.display = 'flex';
+}
+
+async function addTrackToPlaylist(playlistId) {
+  if (!_atpTrack) return;
+  await pw.addToPlaylist({ playlistId, track: _atpTrack });
+  await loadPlaylists();
+  closeModal('modal-atp');
+  showNotif('Added to playlist');
+  if (_currentView === 'playlist') loadPlaylistView(playlistId);
+}
+
+async function confirmCreatePlaylist() {
+  const name = document.getElementById('cpl-name').value.trim();
+  if (!name) return;
+  const modal = document.getElementById('modal-cpl');
+  const renameId = parseInt(modal.dataset.renameId);
+  if (renameId) {
+    await pw.renamePlaylist({ playlistId: renameId, name });
+    delete modal.dataset.renameId;
+  } else {
+    await pw.createPlaylist({ userId: _userId, name });
+  }
+  await loadPlaylists();
+  closeModal('modal-cpl');
+  document.getElementById('cpl-name').value = '';
+  showNotif(renameId ? 'Playlist renamed' : `Created "${name}"`);
+  if (_currentView === 'playlist') loadPlaylistView(renameId);
+}
+
+function createPlaylistPrompt() {
+  document.getElementById('modal-cpl').style.display = 'flex';
+  document.getElementById('cpl-name').value = '';
+  document.getElementById('cpl-name').focus();
+  delete document.getElementById('modal-cpl').dataset.renameId;
+}
+
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+// ── Context menu ───────────────────────────────────────────────────────────
+
+function showCtxMenu(x, y, items) {
+  const menu = document.getElementById('ctx-menu');
+  const cont = document.getElementById('ctx-items');
+  cont.innerHTML = '';
+  items.forEach(item => {
+    if (item.sep) { const d = document.createElement('div'); d.className = 'ctx-sep'; cont.appendChild(d); return; }
+    const div = document.createElement('div');
+    div.className = 'ctx-item' + (item.danger ? ' danger' : '');
+    div.textContent = item.label;
+    div.onclick = () => { hideCtxMenu(); item.action(); };
+    cont.appendChild(div);
+  });
+  menu.style.display = 'block';
+  const vw = window.innerWidth, vh = window.innerHeight;
+  menu.style.left = Math.min(x, vw - 200) + 'px';
+  menu.style.top  = Math.min(y, vh - items.length * 36 - 20) + 'px';
+}
+
+function hideCtxMenu() { document.getElementById('ctx-menu').style.display = 'none'; }
+
+function trackCtxMenu(e, track, allTracks, idx, opts = {}) {
+  e.preventDefault(); e.stopPropagation();
+  _ctxTrack = track;
+  const items = [
+    { label: '▶ Play',            action: () => playTrack(track, allTracks, idx) },
+    { label: '⏭ Play Next',       action: () => { queue.splice(queueIdx + 1, 0, track); showNotif('Added to queue'); } },
+    { sep: true },
+    { label: '♥ Add to Liked',    action: () => pw.toggleLike({ userId: _userId, track }).then(() => refreshLikedView()) },
+    { label: '＋ Add to Playlist', action: () => openAddToPlaylistModal(track) },
+  ];
+  if (opts.showRemove) {
+    items.push({ sep: true });
+    items.push({ label: '✕ Remove from Playlist', danger: true,
+      action: async () => { await pw.removeFromPlaylist({ playlistId: opts.showRemove, videoId: track.videoId }); loadPlaylistView(opts.showRemove); }
+    });
+  }
+  showCtxMenu(e.clientX, e.clientY, items);
+}
+
+// ── Track row helpers ────────────────────────────────────────────────────────
+
+function trackRowHTML(track, idx, allTracks, opts = {}) {
+  return `<div class="track-row" data-idx="${idx}" data-vid="${track.videoId}"
+    ondblclick="playTrack(${JSON.stringify(track).replace(/"/g,'&quot;')}, null, null)"
+    oncontextmenu="">
+    <span class="track-num">${idx + 1}</span>
+    <img class="track-thumb" src="${esc(track.thumbnail)}" alt="" loading="lazy"/>
+    <div class="track-info">
+      <span class="track-title">${esc(track.title)}</span>
+      <span class="track-artist">${esc(track.artist)}</span>
+    </div>
+    <span class="track-dur">${track.duration}</span>
+    <div class="track-actions">
+      <button class="btn-track-action" title="Play" onclick="playTrack(${JSON.stringify(track).replace(/"/g,'&quot;')}, null, null)">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      </button>
+      <button class="btn-track-action" title="Add to playlist" onclick="openAddToPlaylistModal(${JSON.stringify(track).replace(/"/g,'&quot;')})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+      <button class="btn-track-action" title="Like" onclick="pw.toggleLike({userId:_userId,track:${JSON.stringify(track).replace(/"/g,'&quot;')}}).then(()=>refreshLikedView())">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      </button>
+    </div>
+  </div>`;
+}
+
+function bindTrackRows(view, allTracks) {
+  view.querySelectorAll('.track-row').forEach((row, i) => {
+    const track = allTracks[i];
+    if (!track) return;
+    row.addEventListener('dblclick', () => playTrack(track, allTracks, i));
+    row.addEventListener('contextmenu', (e) => {
+      const inPL = row.closest('#view-playlist');
+      const plId = inPL ? parseInt(document.querySelector('.pl-sidebar-item.active')?.dataset.id) : null;
+      trackCtxMenu(e, track, allTracks, i, { showRemove: plId });
+    });
+  });
+}
+
+function makeCard(track, allTracks, idx) {
+  const card = document.createElement('div');
+  card.className = 'music-card';
+  card.innerHTML = `
+    <img class="card-art" src="${esc(track.thumbnail)}" alt="" loading="lazy"/>
+    <div class="card-body">
+      <div class="card-title">${esc(track.title)}</div>
+      <div class="card-sub">${esc(track.artist)}</div>
+    </div>
+    <button class="card-play-btn" title="Play">
+      <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    </button>`;
+  card.querySelector('.card-play-btn').onclick = (e) => { e.stopPropagation(); playTrack(track, allTracks, idx); };
+  card.addEventListener('dblclick', () => playTrack(track, allTracks, idx));
+  card.addEventListener('contextmenu', (e) => trackCtxMenu(e, track, allTracks, idx));
+  return card;
+}
+
+// ── Misc ────────────────────────────────────────────────────────────────────
+
+function logout() { pw.goToLogin(); }
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Morning';
+  if (h < 18) return 'Afternoon';
+  return 'Evening';
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function skeletonRow() {
+  return `<div class="track-row"><span class="track-num skeleton" style="width:20px;height:14px;display:inline-block"></span><div class="track-thumb skeleton"></div><div class="track-info"><span class="skeleton" style="display:block;height:13px;width:60%;margin-bottom:6px"></span><span class="skeleton" style="display:block;height:11px;width:40%"></span></div></div>`;
+}
