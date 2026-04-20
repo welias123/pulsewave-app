@@ -1,12 +1,159 @@
 // ── Pulsewave App Logic ──────────────────────────────────────────────────────
 
-let _userId   = null;
-let _username = null;
-let _playlists = [];
+let _userId     = null;
+let _username   = null;
+let _isPremium  = false;
+let _playlists  = [];
 let _searchTimeout = null;
-let _currentView = 'home';
-let _ctxTrack = null;
-let _atpTrack = null;
+let _currentView   = 'home';
+let _ctxTrack      = null;
+let _atpTrack      = null;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PREMIUM SYSTEM
+// ─────────────────────────────────────────────────────────────────────────────
+
+function initPremium(isPremium) {
+  _isPremium = isPremium;
+  const adBanner     = document.getElementById('ad-banner');
+  const premBanner   = document.getElementById('premium-sidebar-banner');
+  const premBadge    = document.getElementById('premium-badge-sidebar');
+  const sleepBtn     = document.getElementById('btn-sleep');
+
+  if (isPremium) {
+    // Hide ads, show premium indicators
+    if (adBanner)   adBanner.style.display   = 'none';
+    if (premBanner) premBanner.style.display  = 'none';
+    if (premBadge)  premBadge.style.display   = 'block';
+    if (sleepBtn)   sleepBtn.style.display    = 'flex';
+    // Apply premium Gold theme
+    document.body.classList.add('premium-theme');
+    // Adjust layout: no ad banner means player sits at bottom directly
+    document.documentElement.style.setProperty('--ad-h', '0px');
+  } else {
+    // Show ads and upgrade prompts
+    if (adBanner)   adBanner.style.display   = 'block';
+    if (premBanner) premBanner.style.display  = 'block';
+    if (premBadge)  premBadge.style.display   = 'none';
+    if (sleepBtn)   sleepBtn.style.display    = 'none';
+    document.body.classList.remove('premium-theme');
+    // Rotate ad every 5 minutes
+    setInterval(showNextAd, 5 * 60 * 1000);
+  }
+}
+
+const ADS = [
+  { emoji:'⭐', title:'Pulsewave Premium', text:'Keine Werbung · Sleep Timer · Crossfade · Nur €2/Monat', cta:'Jetzt upgraden' },
+  { emoji:'🎵', title:'Mehr Musik genießen', text:'Mit Premium hörst du ohne Unterbrechungen. Upgrade jetzt!', cta:'Premium holen' },
+  { emoji:'🎛️', title:'Eigene EQ-Presets', text:'Speichere deine perfekten Klangeinstellungen — mit Premium.', cta:'Jetzt testen' },
+  { emoji:'⏰', title:'Sleep Timer', text:'Schlafen beim Musik hören? Sleep Timer ist ein Premium-Feature.', cta:'Upgraden' },
+];
+let _adIndex = 0;
+function showNextAd() {
+  const ad = ADS[_adIndex % ADS.length];
+  _adIndex++;
+  const el = document.getElementById('ad-banner');
+  if (!el || _isPremium) return;
+  el.querySelector('.ad-emoji').textContent      = ad.emoji;
+  el.querySelector('.ad-text strong').textContent = ad.title;
+  el.querySelector('.ad-text span').textContent   = ad.text;
+  el.querySelector('.ad-cta').textContent         = ad.cta + ' →';
+  el.style.display = 'block';
+}
+
+function openPremiumModal() {
+  document.getElementById('premium-modal').style.display = 'flex';
+}
+function closePremiumModal() {
+  document.getElementById('premium-modal').style.display = 'none';
+}
+async function openStripeCheckout() {
+  try {
+    const token = localStorage.getItem('pw_token');
+    if (!token) { alert('Bitte zuerst einloggen!'); return; }
+    const res = await fetch('https://pulsewave-welias.loca.lt/api/create-checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'bypass-tunnel-reminder': 'true',
+        Authorization: 'Bearer ' + token
+      }
+    });
+    const data = await res.json();
+    if (data.url) {
+      const { shell } = require('electron');
+      shell.openExternal(data.url);
+    } else {
+      alert(data.error || 'Checkout konnte nicht gestartet werden.');
+    }
+  } catch(e) {
+    alert('Fehler: ' + e.message);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SLEEP TIMER (Premium)
+// ─────────────────────────────────────────────────────────────────────────────
+
+let _sleepTimer     = null;
+let _sleepEndTime   = null;
+let _sleepStatusInt = null;
+
+function openSleepTimer() {
+  if (!_isPremium) { openPremiumModal(); return; }
+  document.getElementById('sleep-modal').style.display = 'flex';
+  updateSleepStatus();
+}
+
+function setSleep(minutes) {
+  clearSleepTimer();
+  _sleepEndTime = Date.now() + minutes * 60000;
+  _sleepTimer   = setTimeout(() => {
+    // Pause music when timer ends
+    if (typeof togglePlay === 'function') {
+      const pauseBtn = document.getElementById('btn-play');
+      const iconPlay  = document.getElementById('icon-play');
+      if (iconPlay && iconPlay.style.display === 'none') togglePlay(); // pause if playing
+    }
+    showSleepNotif('⏰ Sleep Timer abgelaufen — Musik pausiert');
+    clearSleepTimer();
+  }, minutes * 60000);
+  document.querySelectorAll('.sleep-btn').forEach(b => b.classList.remove('active'));
+  updateSleepStatus();
+}
+
+function cancelSleep() {
+  clearSleepTimer();
+  document.getElementById('sleep-status').textContent = 'Timer abgebrochen';
+}
+
+function clearSleepTimer() {
+  if (_sleepTimer) { clearTimeout(_sleepTimer); _sleepTimer = null; }
+  if (_sleepStatusInt) { clearInterval(_sleepStatusInt); _sleepStatusInt = null; }
+  _sleepEndTime = null;
+}
+
+function updateSleepStatus() {
+  const el = document.getElementById('sleep-status');
+  if (!_sleepEndTime) { if(el) el.textContent = 'Kein Timer aktiv'; return; }
+  if (_sleepStatusInt) clearInterval(_sleepStatusInt);
+  _sleepStatusInt = setInterval(() => {
+    const rem = Math.max(0, _sleepEndTime - Date.now());
+    const m   = Math.floor(rem / 60000);
+    const s   = Math.floor((rem % 60000) / 1000);
+    if (el) el.textContent = rem > 0 ? `⏰ Stoppt in ${m}:${String(s).padStart(2,'0')}` : 'Timer abgelaufen';
+    if (rem === 0) clearInterval(_sleepStatusInt);
+  }, 1000);
+}
+
+function showSleepNotif(msg) {
+  // Reuse toast-style notification
+  const n = document.createElement('div');
+  n.textContent = msg;
+  n.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#1a1a1a;border:1px solid #FFD600;border-radius:12px;padding:12px 24px;color:#FFD600;font-size:14px;font-weight:700;z-index:9999;white-space:nowrap';
+  document.body.appendChild(n);
+  setTimeout(() => n.remove(), 4000);
+}
 
 const HOME_QUERIES = [
   { label: 'Top Hits 2024', query: 'top hits 2024 official' },
@@ -21,11 +168,13 @@ const HOME_QUERIES = [
 window.addEventListener('DOMContentLoaded', () => {
   initPlayer();
   pw.onUserData(async (data) => {
-    _userId   = data.userId;
-    _username = data.username;
+    _userId    = data.userId;
+    _username  = data.username;
     window._userId = _userId;
-    document.getElementById('user-name').textContent  = _username;
+    document.getElementById('user-name').textContent   = _username;
     document.getElementById('user-avatar').textContent = _username[0].toUpperCase();
+    // Init premium features
+    initPremium(data.isPremium || false);
     await loadPlaylists();
     loadHome();
   });

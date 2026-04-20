@@ -80,7 +80,25 @@ ipcMain.handle('auth-login', (_, { username, password }) => {
 // ── Navigation ────────────────────────────────────────────────────────────
 ipcMain.on('go-to-app', (_, userData) => {
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
-  mainWindow.webContents.once('did-finish-load', () => mainWindow.webContents.send('user-data', userData));
+  mainWindow.webContents.once('did-finish-load', async () => {
+    // Check premium status from backend (non-blocking)
+    let isPremium = false;
+    try {
+      const token = userData.token;
+      if (token) {
+        const { net } = require('electron');
+        const req = net.request({ method:'GET', url:'https://pulsewave-welias.loca.lt/api/me', headers:{ Authorization:'Bearer '+token, 'bypass-tunnel-reminder':'true' } });
+        const data = await new Promise((resolve,reject) => {
+          let body='';
+          req.on('response', r => { r.on('data',d=>body+=d); r.on('end',()=>{ try{resolve(JSON.parse(body))}catch{reject()} }); });
+          req.on('error', reject);
+          req.end();
+        });
+        isPremium = data?.user?.is_premium || false;
+      }
+    } catch { /* backend unreachable, default to free */ }
+    mainWindow.webContents.send('user-data', { ...userData, isPremium });
+  });
 });
 ipcMain.on('go-to-login', () => mainWindow.loadFile(path.join(__dirname, 'src', 'login.html')));
 
