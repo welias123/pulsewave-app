@@ -102,12 +102,21 @@ ipcMain.on('go-to-app', (_, userData) => {
 });
 ipcMain.on('go-to-login', () => mainWindow.loadFile(path.join(__dirname, 'src', 'login.html')));
 
-// ── Search ────────────────────────────────────────────────────────────────
+// ── Search (with in-memory cache, 15 min TTL) ─────────────────────────────
+const _searchCache = new Map();
+const CACHE_TTL = 15 * 60 * 1000;
+
 ipcMain.handle('search-music', (_, query) => new Promise(resolve => {
   const bin = ytdlp();
   if (!fs.existsSync(bin)) { resolve({ ok: false, error: 'yt-dlp not found. Run: node setup.js' }); return; }
+
+  const key = query.toLowerCase().trim();
+  const cached = _searchCache.get(key);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) { resolve({ ok: true, results: cached.results, cached: true }); return; }
+
   const safe = query.replace(/"/g, '');
-  exec(`"${bin}" "ytsearch15:${safe}" -j --flat-playlist --no-warnings`, { maxBuffer: 10*1024*1024 }, (err, out) => {
+  exec(`"${bin}" "ytsearch20:${safe}" -j --flat-playlist --no-warnings`,
+    { maxBuffer: 20*1024*1024, timeout: 60000 }, (err, out) => {
     if (err) { resolve({ ok: false, error: err.message }); return; }
     try {
       const results = out.trim().split('\n').filter(Boolean).map(l => {
@@ -116,6 +125,7 @@ ipcMain.handle('search-music', (_, query) => new Promise(resolve => {
           thumbnail: d.thumbnail||`https://img.youtube.com/vi/${d.id}/hqdefault.jpg`,
           duration: fmtDur(d.duration), durationSec: d.duration||0 };
       });
+      _searchCache.set(key, { results, ts: Date.now() });
       resolve({ ok: true, results });
     } catch(e) { resolve({ ok: false, error: e.message }); }
   });
