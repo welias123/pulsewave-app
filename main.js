@@ -151,7 +151,7 @@ ipcMain.handle('search-music', (_, query) => new Promise(resolve => {
 
   const safe = query.replace(/"/g, '');
   exec(`"${bin}" "ytsearch20:${safe}" -j --flat-playlist --no-warnings`,
-    { maxBuffer: 20*1024*1024, timeout: 60000 }, (err, out) => {
+    { maxBuffer: 20*1024*1024, timeout: 60000, windowsHide: true }, (err, out) => {
     if (err) { resolve({ ok: false, error: err.message }); return; }
     try {
       const results = out.trim().split('\n').filter(Boolean).map(l => {
@@ -170,7 +170,7 @@ ipcMain.handle('search-music', (_, query) => new Promise(resolve => {
 ipcMain.handle('get-stream-url', (_, videoId) => new Promise(resolve => {
   const bin = ytdlp();
   if (!fs.existsSync(bin)) { resolve({ ok: false, error: 'yt-dlp not found' }); return; }
-  exec(`"${bin}" -f bestaudio -g "https://www.youtube.com/watch?v=${videoId}" --no-warnings`, { maxBuffer: 1024*1024 }, (err, out) => {
+  exec(`"${bin}" -f bestaudio -g "https://www.youtube.com/watch?v=${videoId}" --no-warnings`, { maxBuffer: 1024*1024, windowsHide: true }, (err, out) => {
     if (err) { resolve({ ok: false, error: err.message }); return; }
     resolve({ ok: true, url: out.trim().split('\n')[0] });
   });
