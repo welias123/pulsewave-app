@@ -65,10 +65,45 @@ ipcMain.on('install-update',  () => autoUpdater.quitAndInstall(false, true));
 ipcMain.handle('auth-register', (_, { username, password }) => {
   const db = loadDB();
   if (db.users.find(u => u.username === username)) return { ok: false, error: 'Username already taken' };
-  const user = { id: nextId(db.users), username, password, created_at: new Date().toISOString() };
+  const user = { id: nextId(db.users), username, password, is_premium: false, created_at: new Date().toISOString() };
   db.users.push(user);
   saveDB(db);
   return { ok: true, userId: user.id, username };
+});
+
+// ── Premium code redemption ───────────────────────────────────────────────
+const { net } = require('electron');
+ipcMain.handle('redeem-code', async (_, { code, userId, username }) => {
+  try {
+    const backendUrl = 'https://pulsewave-welias.loca.lt';
+    const req = net.request({
+      method: 'POST', url: backendUrl + '/api/redeem-code-app',
+      headers: { 'Content-Type': 'application/json', 'bypass-tunnel-reminder': 'true' }
+    });
+    const result = await new Promise((resolve, reject) => {
+      let body = '';
+      req.on('response', r => {
+        r.on('data', d => body += d);
+        r.on('end', () => {
+          try {
+            const parsed = JSON.parse(body);
+            resolve({ status: r.statusCode, data: parsed });
+          } catch { reject(new Error('Invalid response')); }
+        });
+      });
+      req.on('error', reject);
+      req.write(JSON.stringify({ code, username }));
+      req.end();
+    });
+    if (result.status !== 200) return { ok: false, error: result.data?.error || 'Ungültiger Code' };
+    // Activate locally
+    const db = loadDB();
+    const user = db.users.find(u => u.id === userId);
+    if (user) { user.is_premium = true; saveDB(db); }
+    return { ok: true, message: result.data.message || 'Premium aktiviert!' };
+  } catch (e) {
+    return { ok: false, error: 'Server nicht erreichbar: ' + e.message };
+  }
 });
 
 ipcMain.handle('auth-login', (_, { username, password }) => {

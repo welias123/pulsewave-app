@@ -35,6 +35,9 @@ contextBridge.exposeInMainWorld('pw', {
   addToHistory: (d)    => ipcRenderer.invoke('add-to-history', d),
   getHistory:   (uid)  => ipcRenderer.invoke('get-history', uid),
 
+  // Premium
+  redeemCode: (d) => ipcRenderer.invoke('redeem-code', d),
+
   // Auto-updater
   onUpdateAvailable: (cb) => ipcRenderer.on('update-available', (_, v) => cb(v)),
   onUpdateDownloaded: (cb) => ipcRenderer.on('update-downloaded', (_, v) => cb(v)),

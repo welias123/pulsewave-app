@@ -68,11 +68,72 @@ function closePremiumModal() {
   document.getElementById('premium-modal').style.display = 'none';
 }
 function openStripeCheckout() {
-  // Open the website's pricing page in the browser — payment happens there
+  closePremiumModal();
+  openCodeRedeemModal();
+}
+
+function openCodeRedeemModal() {
+  const existing = document.getElementById('code-redeem-modal');
+  if (existing) { existing.style.display = 'flex'; return; }
+
+  const m = document.createElement('div');
+  m.id = 'code-redeem-modal';
+  m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  m.innerHTML = `
+    <div style="background:#111;border:1.5px solid #2a2a2a;border-radius:24px;padding:36px;max-width:420px;width:100%;position:relative">
+      <button onclick="document.getElementById('code-redeem-modal').style.display='none'"
+        style="position:absolute;top:16px;right:16px;background:none;border:none;color:#555;font-size:22px;cursor:pointer">✕</button>
+      <div style="text-align:center;margin-bottom:28px">
+        <div style="font-size:40px;margin-bottom:8px">⭐</div>
+        <h2 style="color:#FFD600;font-size:20px;margin-bottom:6px">Premium aktivieren</h2>
+        <p style="color:#666;font-size:13px">Gib deinen Aktivierungscode ein</p>
+      </div>
+      <input id="app-code-input" type="text" placeholder="PULSE-XXXX-XXXX-XXXX"
+        style="width:100%;background:#0d0d0d;border:1.5px solid #2a2a2a;border-radius:12px;padding:14px;color:#fff;font-size:15px;font-family:monospace;letter-spacing:1px;outline:none;margin-bottom:10px;box-sizing:border-box"
+        oninput="this.value=this.value.toUpperCase()">
+      <button onclick="appRedeemCode()"
+        style="width:100%;background:linear-gradient(135deg,#FFD600,#FF9900);color:#000;border:none;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px">
+        🎉 Jetzt aktivieren
+      </button>
+      <div id="app-code-err" style="color:#ff4d4d;font-size:13px;text-align:center;display:none"></div>
+      <div style="margin-top:20px;padding-top:16px;border-top:1px solid #1a1a1a;font-size:12px;color:#444;text-align:center;line-height:1.6">
+        Noch keinen Code? Kaufe Premium auf<br>
+        <a onclick="openWebsite()" style="color:#FFD600;cursor:pointer;text-decoration:underline">pulsewave-website →</a>
+      </div>
+    </div>`;
+  document.body.appendChild(m);
+  setTimeout(() => document.getElementById('app-code-input')?.focus(), 100);
+}
+
+function openWebsite() {
   const { shell } = require('electron');
   shell.openExternal('https://welias123.github.io/pulsewave-website/#pricing');
-  closePremiumModal();
-  showNotif('🌐 Pricing-Seite geöffnet — zahle dort und starte die App neu');
+}
+
+async function appRedeemCode() {
+  const code  = document.getElementById('app-code-input')?.value?.trim();
+  const errEl = document.getElementById('app-code-err');
+  if (!code) { errEl.textContent = 'Code eingeben'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+  const btn = document.querySelector('#code-redeem-modal button[onclick="appRedeemCode()"]');
+  if (btn) btn.textContent = '⏳ Wird überprüft…';
+  try {
+    const result = await pw.redeemCode({ code, userId: _userId, username: _username });
+    if (!result.ok) {
+      errEl.textContent = result.error || 'Ungültiger Code';
+      errEl.style.display = 'block';
+      if (btn) btn.textContent = '🎉 Jetzt aktivieren';
+      return;
+    }
+    document.getElementById('code-redeem-modal').style.display = 'none';
+    _isPremium = true;
+    initPremium(true);
+    showNotif('🎉 ' + (result.message || 'Premium aktiviert!'));
+  } catch (e) {
+    errEl.textContent = 'Fehler: ' + e.message;
+    errEl.style.display = 'block';
+    if (btn) btn.textContent = '🎉 Jetzt aktivieren';
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -204,7 +265,8 @@ window.addEventListener('DOMContentLoaded', () => {
   pw.onUserData(async (data) => {
     _userId    = data.userId;
     _username  = data.username;
-    window._userId = _userId;
+    window._userId    = _userId;
+    window._authToken = data.token || null;
     document.getElementById('user-name').textContent   = _username;
     document.getElementById('user-avatar').textContent = _username[0].toUpperCase();
     // Init premium features
