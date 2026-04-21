@@ -107,7 +107,9 @@ function openCodeRedeemModal() {
 
 function openWebsite() {
   const { shell } = require('electron');
+  // Open pricing section — user subscribes there, then restarts app to get premium
   shell.openExternal('https://welias123.github.io/pulsewave-website/#pricing');
+  showNotif('🌐 Website geöffnet — nach dem Kauf die App neu starten');
 }
 
 async function appRedeemCode() {
