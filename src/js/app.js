@@ -729,7 +729,10 @@ function makeCard(track, allTracks, idx) {
 
 // ── Misc ────────────────────────────────────────────────────────────────────
 
-function logout() { pw.goToLogin(); }
+function logout() {
+  try { localStorage.removeItem('pw_session'); } catch {}
+  pw.goToLogin();
+}
 
 function getGreeting() {
   const h = new Date().getHours();
