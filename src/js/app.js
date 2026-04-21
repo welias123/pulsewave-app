@@ -301,7 +301,18 @@ async function loadHome() {
         ${Array(10).fill(0).map(()=>`<div class="music-card"><div class="card-art skeleton" style="aspect-ratio:1"></div><div class="card-body"><div class="skeleton" style="height:13px;width:80%;margin-bottom:6px"></div><div class="skeleton" style="height:11px;width:60%"></div></div></div>`).join('')}
       </div>`;
     view.appendChild(sec);
-    loadSection(query, id);
+  }
+
+  // Load sections in batches of 3 to avoid overwhelming yt-dlp with 16 parallel processes
+  const BATCH_SIZE = 3;
+  for (let i = 0; i < HOME_QUERIES.length; i += BATCH_SIZE) {
+    const batch = HOME_QUERIES.slice(i, i + BATCH_SIZE);
+    await Promise.all(batch.map(({ label, query }) => {
+      const id = 'grid-' + label.replace(/[^\w]/g,'_');
+      return loadSection(query, id);
+    }));
+    // Small delay between batches so yt-dlp has breathing room
+    if (i + BATCH_SIZE < HOME_QUERIES.length) await new Promise(r => setTimeout(r, 400));
   }
 }
 
