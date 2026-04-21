@@ -30,7 +30,9 @@
     },
     "win": {
       "target": [{"target": "nsis", "arch": ["x64"]}],
-      "artifactName": "Pulsewave-Setup.exe"
+      "artifactName": "Pulsewave-Setup.exe",
+      "signingHashAlgorithms": null,
+      "sign": null
     },
     "linux": {
       "target": [{"target": "AppImage", "arch": ["x64"]}],

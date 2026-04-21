@@ -26,8 +26,9 @@ jobs:
         run: npm run build:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_LINK: ''
-          CSC_KEY_PASSWORD: ''
+          WIN_CSC_LINK: ''
+          WIN_CSC_KEY_PASSWORD: ''
+          CSC_IDENTITY_AUTO_DISCOVERY: false
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2
