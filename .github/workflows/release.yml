@@ -3,7 +3,10 @@ name: Build & Release
 on:
   push:
     tags:
-      - 'v*'           # triggers on: git tag v1.0.1 && git push --tags
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
   build-windows:
@@ -36,4 +39,5 @@ jobs:
         run: npm run build:win -- --publish always
 
       - name: Show release artifacts
+        if: always()
         run: Get-ChildItem dist -Recurse -Include "*.exe","*.yml" | Select-Object Name, Length
