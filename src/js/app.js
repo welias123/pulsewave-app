@@ -433,6 +433,7 @@ async function loadHome() {
     }
   }
 
+  // root: view — weil .view selbst scrollt (overflow-y: auto), nicht der Browser
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (!entry.isIntersecting) return;
@@ -443,7 +444,7 @@ async function loadHome() {
       _loadQueue.push({ query: sec.dataset.query, gridId: sec.dataset.gridId });
       drainQueue();
     });
-  }, { rootMargin: '200px' }); // start loading 200px before visible
+  }, { root: view, rootMargin: '300px' });
 
   view.querySelectorAll('.home-section').forEach(sec => observer.observe(sec));
 }
