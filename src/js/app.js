@@ -67,28 +67,12 @@ function openPremiumModal() {
 function closePremiumModal() {
   document.getElementById('premium-modal').style.display = 'none';
 }
-async function openStripeCheckout() {
-  try {
-    const token = localStorage.getItem('pw_token');
-    if (!token) { alert('Bitte zuerst einloggen!'); return; }
-    const res = await fetch('https://pulsewave-welias.loca.lt/api/create-checkout', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'bypass-tunnel-reminder': 'true',
-        Authorization: 'Bearer ' + token
-      }
-    });
-    const data = await res.json();
-    if (data.url) {
-      const { shell } = require('electron');
-      shell.openExternal(data.url);
-    } else {
-      alert(data.error || 'Checkout konnte nicht gestartet werden.');
-    }
-  } catch(e) {
-    alert('Fehler: ' + e.message);
-  }
+function openStripeCheckout() {
+  // Open the website's pricing page in the browser — payment happens there
+  const { shell } = require('electron');
+  shell.openExternal('https://welias123.github.io/pulsewave-website/#pricing');
+  closePremiumModal();
+  showNotif('🌐 Pricing-Seite geöffnet — zahle dort und starte die App neu');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -188,16 +172,16 @@ const GENRES = [
 
 // ── RADIO STATIONS ────────────────────────────────────────────────────────────
 const RADIO_STATIONS = [
-  { name:'Top Hits Radio',    desc:'Die größten Charts weltweit',       query:'top hits 2025 official',           emoji:'🌍', color:'linear-gradient(135deg,#FFD600,#FF9900)' },
-  { name:'Chill Radio',       desc:'Lofi, Ambient & Entspannung',       query:'chill lofi ambient relax music',   emoji:'😌', color:'linear-gradient(135deg,#1565c0,#4fc3f7)' },
-  { name:'Hip-Hop Station',   desc:'Street Beats & Rap Hits',           query:'hip hop rap hits 2025',            emoji:'🎤', color:'linear-gradient(135deg,#ff6b35,#c62828)' },
-  { name:'Pop Station',       desc:'Aktuelle Pop-Hits rund um die Uhr', query:'pop hits chart 2025',              emoji:'🎵', color:'linear-gradient(135deg,#e91e8c,#9c27b0)' },
-  { name:'Electronic Beats',  desc:'EDM, House & Techno',               query:'electronic edm house techno 2025', emoji:'⚡', color:'linear-gradient(135deg,#1a237e,#7b1fa2)' },
-  { name:'Rock Station',      desc:'Classic Rock & Modern Hits',        query:'rock hits classic modern 2024',    emoji:'🎸', color:'linear-gradient(135deg,#b71c1c,#4a148c)' },
-  { name:'R&B Nights',        desc:'Smooth R&B für den Abend',          query:'smooth rnb night vibes 2025',      emoji:'🌙', color:'linear-gradient(135deg,#6a1b9a,#c62828)' },
-  { name:'Workout Mix',       desc:'Power & Energie für dein Training', query:'workout gym motivation banger',    emoji:'💪', color:'linear-gradient(135deg,#1b5e20,#f9a825)' },
-  { name:'Latin Vibes',       desc:'Reggaeton, Salsa & mehr',           query:'latin reggaeton salsa hits 2025',  emoji:'🎺', color:'linear-gradient(135deg,#e65100,#f9a825)' },
-  { name:'K-Pop Station',     desc:'Die besten K-Pop Hits',             query:'kpop hits 2025 official',          emoji:'⭐', color:'linear-gradient(135deg,#ad1457,#7b1fa2)' },
+  { name:'Top Hits Radio',    desc:'Die größten Charts weltweit',       query:'top chart hits music 2024',        emoji:'🌍', color:'linear-gradient(135deg,#FFD600,#FF9900)' },
+  { name:'Chill Radio',       desc:'Lofi, Ambient & Entspannung',       query:'lofi hip hop chill beats',         emoji:'😌', color:'linear-gradient(135deg,#1565c0,#4fc3f7)' },
+  { name:'Hip-Hop Station',   desc:'Street Beats & Rap Hits',           query:'hip hop rap songs',                emoji:'🎤', color:'linear-gradient(135deg,#ff6b35,#c62828)' },
+  { name:'Pop Station',       desc:'Aktuelle Pop-Hits rund um die Uhr', query:'pop music hits',                   emoji:'🎵', color:'linear-gradient(135deg,#e91e8c,#9c27b0)' },
+  { name:'Electronic Beats',  desc:'EDM, House & Techno',               query:'electronic dance music EDM',       emoji:'⚡', color:'linear-gradient(135deg,#1a237e,#7b1fa2)' },
+  { name:'Rock Station',      desc:'Classic Rock & Modern Hits',        query:'rock music classic hits',          emoji:'🎸', color:'linear-gradient(135deg,#b71c1c,#4a148c)' },
+  { name:'R&B Nights',        desc:'Smooth R&B für den Abend',          query:'rnb soul music hits',              emoji:'🌙', color:'linear-gradient(135deg,#6a1b9a,#c62828)' },
+  { name:'Workout Mix',       desc:'Power & Energie für dein Training', query:'workout motivation gym music',     emoji:'💪', color:'linear-gradient(135deg,#1b5e20,#f9a825)' },
+  { name:'Latin Vibes',       desc:'Reggaeton, Salsa & mehr',           query:'latin reggaeton music',            emoji:'🎺', color:'linear-gradient(135deg,#e65100,#f9a825)' },
+  { name:'K-Pop Station',     desc:'Die besten K-Pop Hits',             query:'kpop songs hits',                  emoji:'⭐', color:'linear-gradient(135deg,#ad1457,#7b1fa2)' },
 ];
 
 // ── Boot ───────────────────────────────────────────────────────────────────
