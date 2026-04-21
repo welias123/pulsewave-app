@@ -203,22 +203,47 @@ function showSleepNotif(msg) {
 }
 
 const HOME_QUERIES = [
-  { label: '🔥 Trending Now',        query: 'trending songs 2025 official audio' },
-  { label: '✨ New Releases',         query: 'new music releases 2025 official' },
-  { label: '🏆 Top Charts',          query: 'top 50 hits 2025 chart music' },
-  { label: '😌 Chill Vibes',         query: 'chill lofi hip hop beats relax' },
-  { label: '🎤 Pop Hits',            query: 'top pop songs 2025' },
-  { label: '🎧 Hip-Hop & Rap',       query: 'best hip hop rap songs 2025' },
-  { label: '⚡ Electronic & EDM',    query: 'best electronic dance music EDM 2025' },
-  { label: '🎸 Rock Classics',       query: 'best classic rock songs all time' },
-  { label: '🌙 Late Night R&B',      query: 'best rnb soul songs 2025 late night' },
-  { label: '💪 Workout Energy',      query: 'workout gym motivation music 2025' },
-  { label: '🎷 Jazz & Soul',         query: 'best jazz soul chill music' },
-  { label: '⭐ K-Pop Hits',          query: 'best kpop songs 2025 hits' },
-  { label: '🇩🇪 Deutsche Musik',    query: 'deutsche musik hits 2025' },
-  { label: '🎺 Latin & Reggaeton',   query: 'top latin reggaeton songs 2025' },
-  { label: '🌴 Sommer Hits',         query: 'sommer hits 2025 party' },
-  { label: '🎻 Classical Relaxing',  query: 'best classical music relaxing focus' },
+  // ── Aktuell & Charts ──────────────────────────────────────────────────────
+  { label: '🔥 Trending Now',          query: 'trending songs 2025 official audio' },
+  { label: '✨ New Releases',           query: 'new music releases 2025 official' },
+  { label: '🏆 Top Charts',            query: 'top 50 hits 2025 chart music' },
+  { label: '🌟 2000s Nostalgia',       query: 'best 2000s hits nostalgia pop songs' },
+  { label: '🕺 90s Classics',          query: 'best 90s hits classic pop songs' },
+  { label: '🔮 80s Retro',             query: 'best 80s hits retro pop songs' },
+
+  // ── Stimmungen ────────────────────────────────────────────────────────────
+  { label: '😌 Chill Vibes',           query: 'chill lofi hip hop beats relax' },
+  { label: '🌙 Late Night R&B',        query: 'best rnb soul songs 2025 late night' },
+  { label: '😴 Sleep & Relaxation',    query: 'sleep music relaxing calm peaceful' },
+  { label: '📚 Focus & Study',         query: 'study music focus concentration instrumental' },
+  { label: '🎉 Party Anthems',         query: 'party anthems best club hits 2025' },
+  { label: '❤️ Love Songs',           query: 'best love songs romantic ballads all time' },
+  { label: '🌅 Morning Vibes',         query: 'morning vibes feel good songs playlist' },
+  { label: '🌃 City Nights',           query: 'city night drive music ambient synthwave' },
+  { label: '🏖️ Beach Vibes',          query: 'beach summer vibes tropical songs' },
+
+  // ── Genre ─────────────────────────────────────────────────────────────────
+  { label: '🎤 Pop Hits',              query: 'top pop songs 2025' },
+  { label: '🎧 Hip-Hop & Rap',         query: 'best hip hop rap songs 2025' },
+  { label: '⚡ Electronic & EDM',      query: 'best electronic dance music EDM 2025' },
+  { label: '🎸 Rock Classics',         query: 'best classic rock songs all time' },
+  { label: '🎸 Indie & Alternative',   query: 'best indie alternative rock songs 2025' },
+  { label: '💪 Workout Energy',        query: 'workout gym motivation music 2025' },
+  { label: '🎷 Jazz & Soul',           query: 'best jazz soul chill music' },
+  { label: '🎻 Classical',             query: 'best classical music relaxing focus beethoven mozart' },
+  { label: '🎹 Piano & Instrumental',  query: 'beautiful piano instrumental music relaxing' },
+  { label: '⭐ K-Pop Hits',            query: 'best kpop songs 2025 hits' },
+  { label: '🎺 Latin & Reggaeton',     query: 'top latin reggaeton songs 2025' },
+  { label: '🌴 Afrobeats',             query: 'best afrobeats songs 2025 afropop' },
+  { label: '🌊 Reggae & Caribbean',    query: 'best reggae songs caribbean music vibes' },
+  { label: '🤠 Country Hits',          query: 'best country songs 2025 hits' },
+  { label: '🔊 Bass Boosted',          query: 'bass boosted songs 2025 trap music' },
+  { label: '🎮 Gaming & Anime',        query: 'anime openings gaming music best songs' },
+
+  // ── Regional ──────────────────────────────────────────────────────────────
+  { label: '🇩🇪 Deutsche Musik',      query: 'deutsche musik hits 2025 pop rap' },
+  { label: '🌴 Sommer Hits',           query: 'sommer hits 2025 party' },
+  { label: '🇹🇷 Türkçe Müzik',       query: 'turkce muzik pop hits 2025' },
 ];
 
 // ── GENRES (Browse) ──────────────────────────────────────────────────────────
@@ -356,10 +381,13 @@ async function loadHome() {
       </div>
     </div>`;
 
+  // Build all section containers first (with skeleton placeholders)
   for (const { label, query } of HOME_QUERIES) {
     const id = 'grid-' + label.replace(/[^\w]/g,'_');
     const sec = document.createElement('div');
     sec.className = 'home-section';
+    sec.dataset.query = query;
+    sec.dataset.gridId = id;
     sec.innerHTML = `<h3 class="section-title">${label}</h3>
       <div class="card-grid" id="${id}">
         ${Array(10).fill(0).map(()=>`<div class="music-card"><div class="card-art skeleton" style="aspect-ratio:1"></div><div class="card-body"><div class="skeleton" style="height:13px;width:80%;margin-bottom:6px"></div><div class="skeleton" style="height:11px;width:60%"></div></div></div>`).join('')}
@@ -367,17 +395,32 @@ async function loadHome() {
     view.appendChild(sec);
   }
 
-  // Load sections in batches of 3 to avoid overwhelming yt-dlp with 16 parallel processes
-  const BATCH_SIZE = 3;
-  for (let i = 0; i < HOME_QUERIES.length; i += BATCH_SIZE) {
-    const batch = HOME_QUERIES.slice(i, i + BATCH_SIZE);
-    await Promise.all(batch.map(({ label, query }) => {
-      const id = 'grid-' + label.replace(/[^\w]/g,'_');
-      return loadSection(query, id);
-    }));
-    // Small delay between batches so yt-dlp has breathing room
-    if (i + BATCH_SIZE < HOME_QUERIES.length) await new Promise(r => setTimeout(r, 400));
+  // Lazy load: only fire yt-dlp when a section scrolls into view
+  // Max 2 concurrent loads so search/radio always stay responsive
+  let _activeLoads = 0;
+  const _loadQueue = [];
+
+  function drainQueue() {
+    while (_activeLoads < 2 && _loadQueue.length) {
+      const { query, gridId } = _loadQueue.shift();
+      _activeLoads++;
+      loadSection(query, gridId).finally(() => { _activeLoads--; drainQueue(); });
+    }
   }
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const sec = entry.target;
+      if (sec.dataset.loaded) return;
+      sec.dataset.loaded = '1';
+      observer.unobserve(sec);
+      _loadQueue.push({ query: sec.dataset.query, gridId: sec.dataset.gridId });
+      drainQueue();
+    });
+  }, { rootMargin: '200px' }); // start loading 200px before visible
+
+  view.querySelectorAll('.home-section').forEach(sec => observer.observe(sec));
 }
 
 async function loadSection(query, gridId) {

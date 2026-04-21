@@ -1,6 +1,6 @@
 {
   "name": "pulsewave",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Your music, your way.",
   "main": "main.js",
   "scripts": {
@@ -21,6 +21,7 @@
     "productName": "Pulsewave",
     "copyright": "Copyright © 2025 Pulsewave",
     "files": ["main.js", "preload.js", "src/**/*", "bin/**/*"],
+    "asarUnpack": ["bin/**/*"],
     "publish": {
       "provider": "github",
       "owner": "welias123",
