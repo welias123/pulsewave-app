@@ -156,11 +156,48 @@ function showSleepNotif(msg) {
 }
 
 const HOME_QUERIES = [
-  { label: 'Top Hits 2024', query: 'top hits 2024 official' },
-  { label: 'Chill Vibes',   query: 'chill lofi hip hop mix' },
-  { label: 'Pop Essentials',query: 'pop hits playlist 2024' },
-  { label: 'Hip-Hop',       query: 'best hip hop songs 2024' },
-  { label: 'Electronic',    query: 'best electronic music 2024' },
+  { label: '🔥 Trending Now',     query: 'trending songs 2025 official audio' },
+  { label: '✨ New Releases',      query: 'new music 2025 official' },
+  { label: '😌 Chill Vibes',      query: 'chill lofi hip hop beats relax' },
+  { label: '🎤 Pop Hits',         query: 'top pop songs 2025' },
+  { label: '🎧 Hip-Hop & Rap',    query: 'best hip hop rap songs 2025' },
+  { label: '⚡ Electronic',       query: 'best electronic dance music 2025' },
+  { label: '💪 Workout',          query: 'workout motivation music gym 2025' },
+  { label: '🌙 Late Night R&B',   query: 'best rnb songs 2025 late night' },
+];
+
+// ── GENRES (Browse) ──────────────────────────────────────────────────────────
+const GENRES = [
+  { name:'Pop',        query:'top pop songs 2025',                emoji:'🎤', color:'linear-gradient(135deg,#e91e8c,#c2185b)' },
+  { name:'Hip-Hop',    query:'best hip hop rap 2025',             emoji:'🎤', color:'linear-gradient(135deg,#ff6b35,#f7931e)' },
+  { name:'Rock',       query:'best rock songs 2025',              emoji:'🎸', color:'linear-gradient(135deg,#c62828,#7b1fa2)' },
+  { name:'Electronic', query:'best electronic music EDM 2025',    emoji:'⚡', color:'linear-gradient(135deg,#1565c0,#7b1fa2)' },
+  { name:'R&B',        query:'best rnb soul 2025',                emoji:'🎵', color:'linear-gradient(135deg,#6a1b9a,#ad1457)' },
+  { name:'Latin',      query:'top latin music reggaeton 2025',    emoji:'🎺', color:'linear-gradient(135deg,#f9a825,#e65100)' },
+  { name:'Jazz',       query:'best jazz music chill 2024',        emoji:'🎷', color:'linear-gradient(135deg,#4e342e,#bf360c)' },
+  { name:'Classical',  query:'best classical music relaxing',     emoji:'🎻', color:'linear-gradient(135deg,#1a237e,#283593)' },
+  { name:'Country',    query:'best country songs 2025',           emoji:'🤠', color:'linear-gradient(135deg,#827717,#558b2f)' },
+  { name:'Metal',      query:'best metal songs heavy 2024',       emoji:'🤘', color:'linear-gradient(135deg,#212121,#b71c1c)' },
+  { name:'K-Pop',      query:'best kpop songs 2025',              emoji:'⭐', color:'linear-gradient(135deg,#ec407a,#ab47bc)' },
+  { name:'Indie',      query:'best indie alternative songs 2025', emoji:'🌿', color:'linear-gradient(135deg,#2e7d32,#00695c)' },
+  { name:'Reggae',     query:'best reggae music 2024',            emoji:'🌴', color:'linear-gradient(135deg,#388e3c,#f9a825)' },
+  { name:'Dance',      query:'best dance club music 2025',        emoji:'🕺', color:'linear-gradient(135deg,#0277bd,#00838f)' },
+  { name:'Soul',       query:'best soul music classic hits',      emoji:'❤️', color:'linear-gradient(135deg,#4a148c,#880e4f)' },
+  { name:'Workout',    query:'workout music gym motivation 2025',  emoji:'💪', color:'linear-gradient(135deg,#33691e,#1b5e20)' },
+];
+
+// ── RADIO STATIONS ────────────────────────────────────────────────────────────
+const RADIO_STATIONS = [
+  { name:'Top Hits Radio',    desc:'Die größten Charts weltweit',       query:'top hits 2025 official',           emoji:'🌍', color:'linear-gradient(135deg,#FFD600,#FF9900)' },
+  { name:'Chill Radio',       desc:'Lofi, Ambient & Entspannung',       query:'chill lofi ambient relax music',   emoji:'😌', color:'linear-gradient(135deg,#1565c0,#4fc3f7)' },
+  { name:'Hip-Hop Station',   desc:'Street Beats & Rap Hits',           query:'hip hop rap hits 2025',            emoji:'🎤', color:'linear-gradient(135deg,#ff6b35,#c62828)' },
+  { name:'Pop Station',       desc:'Aktuelle Pop-Hits rund um die Uhr', query:'pop hits chart 2025',              emoji:'🎵', color:'linear-gradient(135deg,#e91e8c,#9c27b0)' },
+  { name:'Electronic Beats',  desc:'EDM, House & Techno',               query:'electronic edm house techno 2025', emoji:'⚡', color:'linear-gradient(135deg,#1a237e,#7b1fa2)' },
+  { name:'Rock Station',      desc:'Classic Rock & Modern Hits',        query:'rock hits classic modern 2024',    emoji:'🎸', color:'linear-gradient(135deg,#b71c1c,#4a148c)' },
+  { name:'R&B Nights',        desc:'Smooth R&B für den Abend',          query:'smooth rnb night vibes 2025',      emoji:'🌙', color:'linear-gradient(135deg,#6a1b9a,#c62828)' },
+  { name:'Workout Mix',       desc:'Power & Energie für dein Training', query:'workout gym motivation banger',    emoji:'💪', color:'linear-gradient(135deg,#1b5e20,#f9a825)' },
+  { name:'Latin Vibes',       desc:'Reggaeton, Salsa & mehr',           query:'latin reggaeton salsa hits 2025',  emoji:'🎺', color:'linear-gradient(135deg,#e65100,#f9a825)' },
+  { name:'K-Pop Station',     desc:'Die besten K-Pop Hits',             query:'kpop hits 2025 official',          emoji:'⭐', color:'linear-gradient(135deg,#ad1457,#7b1fa2)' },
 ];
 
 // ── Boot ───────────────────────────────────────────────────────────────────
@@ -200,12 +237,11 @@ function navigate(view, el) {
   const target = document.getElementById(`view-${view}`);
   if (target) { target.style.display = 'block'; target.classList.add('active'); }
 
-  if (view === 'search') {
-    document.getElementById('search-input').focus();
-    if (!target.innerHTML.trim()) renderSearchEmpty();
-  } else if (view === 'liked')   { refreshLikedView(); }
-  else if (view === 'history')   { refreshHistoryView(); }
-  else if (view === 'home')      { /* already loaded */ }
+  if      (view === 'search')  { document.getElementById('search-input').focus(); if (!target.innerHTML.trim()) renderSearchEmpty(); }
+  else if (view === 'liked')   { refreshLikedView(); }
+  else if (view === 'history') { refreshHistoryView(); }
+  else if (view === 'browse')  { loadBrowse(); }
+  else if (view === 'radio')   { loadRadio(); }
 }
 
 function navigateToPlaylist(playlistId) {
@@ -226,15 +262,49 @@ function navigateToPlaylist(playlistId) {
 
 async function loadHome() {
   const view = document.getElementById('view-home');
-  view.innerHTML = `<h2 class="section-title">Good ${getGreeting()}, <span style="color:var(--yellow)">${_username}</span></h2>`;
+  const h = new Date().getHours();
+  const greeting = h < 12 ? 'Guten Morgen' : h < 18 ? 'Guten Tag' : 'Guten Abend';
+
+  view.innerHTML = `
+    <div class="home-hero">
+      <div class="home-hero-text">
+        <p class="home-hero-eyebrow">${greeting}, <strong>${esc(_username)}</strong> 👋</p>
+        <h1 class="home-hero-title">Deine Musik.<br>Dein Moment.</h1>
+        <p class="home-hero-sub">Entdecke neue Hits, entspanne mit Lofi oder pumpe dein Workout hoch.</p>
+        <div class="home-hero-btns">
+          <button class="hero-btn-primary" onclick="navigate('browse',document.querySelector('[onclick*=browse]'))">
+            <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            Genres
+          </button>
+          <button class="hero-btn-secondary" onclick="navigate('radio',document.querySelector('[onclick*=radio]'))">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M3 18v-6a9 9 0 0118 0v6"/><path d="M21 19a2 2 0 01-2 2h-1a2 2 0 01-2-2v-3a2 2 0 012-2h3zM3 19a2 2 0 002 2h1a2 2 0 002-2v-3a2 2 0 00-2-2H3z"/></svg>
+            Radio
+          </button>
+        </div>
+      </div>
+      <div class="home-hero-visual">
+        <div class="hero-wave">
+          ${[...Array(22)].map((_,i)=>`<div class="hero-bar" style="animation-delay:${(i*0.08).toFixed(2)}s"></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="home-quick-picks">
+      <h3 class="section-title">⚡ Quick Picks</h3>
+      <div class="quick-genre-row">
+        ${GENRES.slice(0,8).map(g=>`<button class="quick-genre-pill" style="background:${g.color}" onclick="openGenre('${esc(g.name)}','${esc(g.query)}')">${g.emoji} ${g.name}</button>`).join('')}
+      </div>
+    </div>`;
 
   for (const { label, query } of HOME_QUERIES) {
+    const id = 'grid-' + label.replace(/[^\w]/g,'_');
     const sec = document.createElement('div');
-    sec.innerHTML = `<h3 class="section-title">${label}</h3><div class="card-grid" id="grid-${label.replace(/\s/g,'_')}">
-      ${Array(6).fill(0).map(() => `<div class="music-card"><div class="card-art skeleton" style="aspect-ratio:1"></div><div class="card-body"><div class="skeleton" style="height:13px;width:80%;margin-bottom:6px"></div><div class="skeleton" style="height:11px;width:60%"></div></div></div>`).join('')}
-    </div>`;
+    sec.className = 'home-section';
+    sec.innerHTML = `<h3 class="section-title">${label}</h3>
+      <div class="card-grid" id="${id}">
+        ${Array(6).fill(0).map(()=>`<div class="music-card"><div class="card-art skeleton" style="aspect-ratio:1"></div><div class="card-body"><div class="skeleton" style="height:13px;width:80%;margin-bottom:6px"></div><div class="skeleton" style="height:11px;width:60%"></div></div></div>`).join('')}
+      </div>`;
     view.appendChild(sec);
-    loadSection(query, `grid-${label.replace(/\s/g,'_')}`);
+    loadSection(query, id);
   }
 }
 
@@ -242,11 +312,107 @@ async function loadSection(query, gridId) {
   const res = await pw.search(query);
   const grid = document.getElementById(gridId);
   if (!grid) return;
-  if (!res.ok || !res.results?.length) { grid.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px">Could not load</p>'; return; }
+  if (!res.ok || !res.results?.length) { grid.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0">Keine Ergebnisse</p>'; return; }
   grid.innerHTML = '';
-  res.results.slice(0, 6).forEach((track, i) => {
-    grid.appendChild(makeCard(track, res.results, i));
-  });
+  res.results.slice(0,6).forEach((track,i) => grid.appendChild(makeCard(track, res.results, i)));
+}
+
+// ── Browse ────────────────────────────────────────────────────────────────────
+
+function loadBrowse() {
+  const view = document.getElementById('view-browse');
+  if (view._loaded) return;
+  view._loaded = true;
+  view.innerHTML = `
+    <h2 class="section-title">Browse</h2>
+    <p style="color:var(--muted);font-size:14px;margin:-8px 0 24px">Wähle ein Genre und entdecke Musik</p>
+    <div class="genre-grid">
+      ${GENRES.map(g=>`
+        <div class="genre-tile" style="background:${g.color}" onclick="openGenre('${esc(g.name)}','${esc(g.query)}')">
+          <div class="genre-tile-emoji">${g.emoji}</div>
+          <div class="genre-tile-name">${g.name}</div>
+        </div>`).join('')}
+    </div>`;
+}
+
+async function openGenre(name, query) {
+  document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+  const view = document.getElementById('view-genre');
+  view.style.display = 'block';
+  _currentView = 'genre';
+
+  const genre = GENRES.find(g => g.name === name) || { color:'linear-gradient(135deg,#222,#333)', emoji:'🎵' };
+  view.innerHTML = `
+    <div class="genre-header" style="background:${genre.color}">
+      <button class="genre-back-btn" onclick="navigate('browse',document.querySelector('[onclick*=browse]'))">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+        Browse
+      </button>
+      <span class="genre-header-emoji">${genre.emoji}</span>
+      <h2 class="genre-header-name">${esc(name)}</h2>
+    </div>
+    <div class="genre-body">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h3 class="section-title" style="margin:0">Top Songs</h3>
+        <button class="btn-pl-play" onclick="playGenreAll()">▶ Alle abspielen</button>
+      </div>
+      <div id="genre-track-list" class="track-list">
+        ${Array(10).fill(0).map(()=>skeletonRow()).join('')}
+      </div>
+    </div>`;
+
+  const res = await pw.search(query);
+  const list = document.getElementById('genre-track-list');
+  if (!list) return;
+  if (!res.ok || !res.results?.length) { list.innerHTML = '<p style="color:var(--muted);padding:20px">Keine Ergebnisse</p>'; return; }
+  window._genreTracks = res.results;
+  list.innerHTML = res.results.map((t,i) => trackRowHTML(t,i,res.results)).join('');
+  bindTrackRows(view, res.results);
+}
+
+function playGenreAll() {
+  if (!window._genreTracks?.length) return;
+  playTrack(window._genreTracks[0], window._genreTracks, 0);
+}
+
+// ── Radio ─────────────────────────────────────────────────────────────────────
+
+let _radioActive = null;
+
+function loadRadio() {
+  const view = document.getElementById('view-radio');
+  if (view._loaded) return;
+  view._loaded = true;
+  view.innerHTML = `
+    <h2 class="section-title">Radio</h2>
+    <p style="color:var(--muted);font-size:14px;margin:-8px 0 24px">Starte eine Station — Musik spielt automatisch weiter</p>
+    <div class="radio-grid">
+      ${RADIO_STATIONS.map((s,i)=>`
+        <div class="radio-card" id="radio-card-${i}" onclick="startRadio(${i})">
+          <div class="radio-card-bg" style="background:${s.color}"></div>
+          <div class="radio-card-content">
+            <div class="radio-emoji">${s.emoji}</div>
+            <div class="radio-info">
+              <div class="radio-name">${s.name}</div>
+              <div class="radio-desc">${s.desc}</div>
+            </div>
+            <div class="radio-play-icon">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+async function startRadio(idx) {
+  const station = RADIO_STATIONS[idx];
+  document.querySelectorAll('.radio-card').forEach((c,i) => c.classList.toggle('radio-active', i === idx));
+  showNotif(`📻 ${station.name} lädt…`);
+  const res = await pw.search(station.query);
+  if (!res.ok || !res.results?.length) { showNotif('Station konnte nicht geladen werden'); return; }
+  _radioActive = { station, idx };
+  playTrack(res.results[0], res.results, 0);
+  showNotif(`📻 ${station.name} — läuft!`);
 }
 
 // ── Search ──────────────────────────────────────────────────────────────────
