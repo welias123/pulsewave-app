@@ -42,4 +42,7 @@ contextBridge.exposeInMainWorld('pw', {
   onUpdateAvailable: (cb) => ipcRenderer.on('update-available', (_, v) => cb(v)),
   onUpdateDownloaded: (cb) => ipcRenderer.on('update-downloaded', (_, v) => cb(v)),
   installUpdate: () => ipcRenderer.send('install-update'),
+
+  // Open external URL in browser
+  openUrl: (url) => ipcRenderer.send('open-url', url),
 });

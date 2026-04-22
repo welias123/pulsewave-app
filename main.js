@@ -59,6 +59,8 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 
 // ── Window controls ───────────────────────────────────────────────────────
+const { shell } = require('electron');
+ipcMain.on('open-url', (_, url) => shell.openExternal(url));
 ipcMain.on('window-minimize', () => mainWindow.minimize());
 ipcMain.on('window-maximize', () => mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize());
 ipcMain.on('window-close',    () => mainWindow.close());

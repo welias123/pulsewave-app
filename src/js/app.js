@@ -108,10 +108,8 @@ function openCodeRedeemModal() {
 }
 
 function openWebsite() {
-  const { shell } = require('electron');
-  // Open pricing section — user subscribes there, then restarts app to get premium
-  shell.openExternal('https://welias123.github.io/pulsewave-website/#pricing');
-  showNotif('🌐 Website geöffnet — nach dem Kauf die App neu starten');
+  pw.openUrl('https://welias123.github.io/pulsewave-website/#pricing');
+  showNotif('🌐 Website geöffnet');
 }
 
 async function appRedeemCode() {
@@ -206,71 +204,118 @@ function showSleepNotif(msg) {
 
 const HOME_QUERIES = [
   // ── Charts & Trends ───────────────────────────────────────────────────────
-  { label: '🔥 Gerade angesagt',        query: 'sabrina carpenter espresso official audio' },
-  { label: '🏆 Billboard Hot 100',      query: 'kendrick lamar not like us official' },
-  { label: '✨ Neu erschienen',          query: 'charli xcx brat official audio 2024' },
+  // ── Aktuell 🔥 ───────────────────────────────────────────────────────────
+  { label: '🔥 Sabrina Carpenter – Espresso',         query: 'sabrina carpenter espresso official audio' },
+  { label: '🔥 Kendrick Lamar – Not Like Us',         query: 'kendrick lamar not like us official audio' },
+  { label: '🔥 Charli XCX – 360',                    query: 'charli xcx 360 official audio' },
+  { label: '🔥 Billie Eilish – Birds Of A Feather',   query: 'billie eilish birds of a feather official' },
+  { label: '🔥 Gracie Abrams – That's So True',       query: 'gracie abrams thats so true official audio' },
+  { label: '🔥 Teddy Swims – Lose Control',           query: 'teddy swims lose control official audio' },
 
-  // ── Große Künstler ────────────────────────────────────────────────────────
-  { label: '🎤 Drake',                  query: 'drake official audio god\'s plan hotline bling' },
-  { label: '🎤 The Weeknd',             query: 'the weeknd blinding lights official audio' },
-  { label: '🎤 Eminem',                 query: 'eminem lose yourself without me official' },
-  { label: '🎤 Taylor Swift',           query: 'taylor swift anti hero official audio' },
-  { label: '🎤 Billie Eilish',          query: 'billie eilish bad guy official audio' },
-  { label: '🎤 Post Malone',            query: 'post malone circles sunflower official' },
-  { label: '🎤 Juice WRLD',             query: 'juice wrld lucid dreams official audio' },
-  { label: '🎤 XXXTentacion',           query: 'xxxtentacion sad official audio' },
-  { label: '🎤 Travis Scott',           query: 'travis scott sicko mode official audio' },
-  { label: '🎤 Kendrick Lamar',         query: 'kendrick lamar humble official audio' },
-  { label: '🎤 Bad Bunny',              query: 'bad bunny dakiti official audio' },
-  { label: '🎤 Doja Cat',               query: 'doja cat say so official audio' },
-  { label: '🎤 SZA',                    query: 'sza kill bill official audio' },
-  { label: '🎤 Ariana Grande',          query: 'ariana grande 7 rings official audio' },
-  { label: '🎤 Ed Sheeran',             query: 'ed sheeran shape of you official audio' },
-  { label: '🎤 Bruno Mars',             query: 'bruno mars uptown funk official audio' },
-  { label: '🎤 Rihanna',                query: 'rihanna umbrella official audio' },
-  { label: '🎤 Kanye West',             query: 'kanye west stronger gold digger official' },
-  { label: '🎤 Jay-Z',                  query: 'jay z empire state of mind official' },
-  { label: '🎤 Lil Baby',               query: 'lil baby drip too hard official audio' },
-  { label: '🎤 Future',                 query: 'future mask off official audio' },
-  { label: '🎤 Lil Uzi Vert',           query: 'lil uzi vert xo tour life official' },
-  { label: '🎤 NBA YoungBoy',           query: 'nba youngboy outside today official' },
-  { label: '🎤 Roddy Ricch',            query: 'roddy ricch the box official audio' },
-  { label: '🎤 DaBaby',                 query: 'dababy rockstar official audio' },
-  { label: '🎤 Cardi B',                query: 'cardi b wap official audio' },
-  { label: '🎤 Nicki Minaj',            query: 'nicki minaj super bass official audio' },
-  { label: '🎤 Lil Wayne',              query: 'lil wayne a milli official audio' },
-  { label: '🎤 Snoop Dogg',             query: 'snoop dogg drop it like it hot official' },
-  { label: '🎤 50 Cent',                query: '50 cent in da club official audio' },
-  { label: '🎤 Chris Brown',            query: 'chris brown with you official audio' },
-  { label: '🎤 Justin Bieber',          query: 'justin bieber baby official audio' },
-  { label: '🎤 Michael Jackson',        query: 'michael jackson thriller billie jean official' },
-  { label: '🎤 Tupac',                  query: 'tupac california love changes official' },
-  { label: '🎤 Notorious B.I.G.',       query: 'notorious big hypnotize official audio' },
-  { label: '🎤 Coldplay',               query: 'coldplay yellow the scientist official' },
-  { label: '🎤 Imagine Dragons',        query: 'imagine dragons radioactive believer official' },
-  { label: '🎤 Arctic Monkeys',         query: 'arctic monkeys do i wanna know official' },
+  // ── Hip-Hop & Rap 🎤 ─────────────────────────────────────────────────────
+  { label: 'Drake – God\'s Plan',                     query: 'drake gods plan official audio' },
+  { label: 'Drake – Hotline Bling',                   query: 'drake hotline bling official audio' },
+  { label: 'Drake – One Dance',                       query: 'drake one dance official audio' },
+  { label: 'The Weeknd – Blinding Lights',            query: 'the weeknd blinding lights official audio' },
+  { label: 'The Weeknd – Starboy',                    query: 'the weeknd starboy official audio' },
+  { label: 'The Weeknd – Save Your Tears',            query: 'the weeknd save your tears official' },
+  { label: 'Eminem – Lose Yourself',                  query: 'eminem lose yourself official audio' },
+  { label: 'Eminem – Without Me',                     query: 'eminem without me official audio' },
+  { label: 'Eminem – Slim Shady',                     query: 'eminem my name is official audio' },
+  { label: 'Travis Scott – SICKO MODE',               query: 'travis scott sicko mode official audio' },
+  { label: 'Travis Scott – Goosebumps',               query: 'travis scott goosebumps official audio' },
+  { label: 'Kendrick Lamar – HUMBLE.',                query: 'kendrick lamar humble official audio' },
+  { label: 'Kendrick Lamar – DNA.',                   query: 'kendrick lamar dna official audio' },
+  { label: 'Post Malone – Circles',                   query: 'post malone circles official audio' },
+  { label: 'Post Malone – Sunflower',                 query: 'post malone sunflower official audio' },
+  { label: 'Post Malone – Rockstar',                  query: 'post malone rockstar official audio' },
+  { label: 'Juice WRLD – Lucid Dreams',               query: 'juice wrld lucid dreams official audio' },
+  { label: 'Juice WRLD – All Girls Are the Same',     query: 'juice wrld all girls are the same official' },
+  { label: 'XXXTentacion – SAD!',                     query: 'xxxtentacion sad official audio' },
+  { label: 'XXXTentacion – Moonlight',                query: 'xxxtentacion moonlight official audio' },
+  { label: 'Lil Baby – Drip Too Hard',                query: 'lil baby drip too hard official audio' },
+  { label: 'Future – Mask Off',                       query: 'future mask off official audio' },
+  { label: 'Lil Uzi Vert – XO TOUR Llif3',           query: 'lil uzi vert xo tour life official' },
+  { label: 'Roddy Ricch – The Box',                   query: 'roddy ricch the box official audio' },
+  { label: 'Cardi B – WAP',                           query: 'cardi b wap official audio' },
+  { label: 'Nicki Minaj – Super Bass',                query: 'nicki minaj super bass official audio' },
+  { label: 'Lil Wayne – A Milli',                     query: 'lil wayne a milli official audio' },
+  { label: '50 Cent – In Da Club',                    query: '50 cent in da club official audio' },
+  { label: 'Snoop Dogg – Drop It Like It\'s Hot',     query: 'snoop dogg drop it like its hot official' },
+  { label: 'Tupac – California Love',                 query: 'tupac california love official audio' },
+  { label: 'Notorious B.I.G. – Hypnotize',            query: 'notorious big hypnotize official audio' },
+  { label: 'Jay-Z – Empire State of Mind',            query: 'jay z empire state of mind official' },
+  { label: 'Kanye West – Stronger',                   query: 'kanye west stronger official audio' },
+  { label: 'Kanye West – Gold Digger',                query: 'kanye west gold digger official audio' },
+  { label: 'Bad Bunny – Dakiti',                      query: 'bad bunny dakiti official audio' },
+  { label: 'Bad Bunny – Tití Me Preguntó',            query: 'bad bunny titi me pregunto official' },
 
-  // ── Genres ────────────────────────────────────────────────────────────────
-  { label: '🎧 Hip-Hop Classics',       query: 'hip hop classics biggie nas jay-z official' },
-  { label: '⚡ EDM Bangers',            query: 'martin garrix animals official audio' },
-  { label: '🎸 Rock Legends',           query: 'nirvana smells like teen spirit official' },
-  { label: '🎷 R&B & Soul',             query: 'frank ocean thinkin bout you official' },
-  { label: '🌴 Reggaeton',              query: 'j balvin mi gente official audio' },
-  { label: '⭐ K-Pop',                  query: 'bts dynamite official audio' },
-  { label: '🎻 Lofi & Chill',           query: 'lofi hip hop beats to study relax' },
+  // ── Pop 🎵 ───────────────────────────────────────────────────────────────
+  { label: 'Taylor Swift – Anti-Hero',                query: 'taylor swift anti hero official audio' },
+  { label: 'Taylor Swift – Shake It Off',             query: 'taylor swift shake it off official' },
+  { label: 'Taylor Swift – Cruel Summer',             query: 'taylor swift cruel summer official' },
+  { label: 'Billie Eilish – bad guy',                 query: 'billie eilish bad guy official audio' },
+  { label: 'Billie Eilish – Happier Than Ever',       query: 'billie eilish happier than ever official' },
+  { label: 'Ariana Grande – 7 Rings',                 query: 'ariana grande 7 rings official audio' },
+  { label: 'Ariana Grande – thank u, next',           query: 'ariana grande thank u next official' },
+  { label: 'Ed Sheeran – Shape of You',               query: 'ed sheeran shape of you official audio' },
+  { label: 'Ed Sheeran – Perfect',                    query: 'ed sheeran perfect official audio' },
+  { label: 'Bruno Mars – Uptown Funk',                query: 'bruno mars uptown funk official audio' },
+  { label: 'Bruno Mars – 24K Magic',                  query: 'bruno mars 24k magic official audio' },
+  { label: 'Rihanna – Umbrella',                      query: 'rihanna umbrella official audio' },
+  { label: 'Rihanna – We Found Love',                 query: 'rihanna we found love official audio' },
+  { label: 'Justin Bieber – Baby',                    query: 'justin bieber baby official audio' },
+  { label: 'Justin Bieber – Sorry',                   query: 'justin bieber sorry official audio' },
+  { label: 'Doja Cat – Say So',                       query: 'doja cat say so official audio' },
+  { label: 'Doja Cat – Kiss Me More',                 query: 'doja cat kiss me more official audio' },
+  { label: 'SZA – Kill Bill',                         query: 'sza kill bill official audio' },
+  { label: 'SZA – Good Days',                         query: 'sza good days official audio' },
+  { label: 'Olivia Rodrigo – drivers license',        query: 'olivia rodrigo drivers license official' },
+  { label: 'Olivia Rodrigo – good 4 u',               query: 'olivia rodrigo good 4 u official' },
+  { label: 'Harry Styles – As It Was',                query: 'harry styles as it was official audio' },
+  { label: 'The Kid LAROI – STAY',                    query: 'the kid laroi stay official audio' },
+  { label: 'Chris Brown – With You',                  query: 'chris brown with you official audio' },
+  { label: 'Michael Jackson – Thriller',              query: 'michael jackson thriller official audio' },
+  { label: 'Michael Jackson – Billie Jean',           query: 'michael jackson billie jean official' },
 
-  // ── Stimmungen ────────────────────────────────────────────────────────────
-  { label: '💪 Workout',                query: 'eminem till i collapse official audio' },
-  { label: '🌙 Late Night',             query: 'the weeknd starboy official audio' },
-  { label: '❤️ Liebeslieder',          query: 'ed sheeran perfect official audio' },
-  { label: '🎉 Party',                  query: 'dj snake taki taki official audio' },
+  // ── Rock & Alternative 🎸 ────────────────────────────────────────────────
+  { label: 'Nirvana – Smells Like Teen Spirit',       query: 'nirvana smells like teen spirit official' },
+  { label: 'Arctic Monkeys – Do I Wanna Know?',       query: 'arctic monkeys do i wanna know official' },
+  { label: 'Coldplay – Yellow',                       query: 'coldplay yellow official audio' },
+  { label: 'Coldplay – The Scientist',                query: 'coldplay the scientist official audio' },
+  { label: 'Imagine Dragons – Radioactive',           query: 'imagine dragons radioactive official audio' },
+  { label: 'Imagine Dragons – Believer',              query: 'imagine dragons believer official audio' },
+  { label: 'Linkin Park – Numb',                      query: 'linkin park numb official audio' },
+  { label: 'Linkin Park – In The End',                query: 'linkin park in the end official audio' },
+  { label: 'Queen – Bohemian Rhapsody',               query: 'queen bohemian rhapsody official audio' },
 
-  // ── Deutsch ───────────────────────────────────────────────────────────────
-  { label: '🇩🇪 Deutschrap',           query: 'ufo361 offiziell audio 2024' },
-  { label: '🇩🇪 Capital Bra',          query: 'capital bra offiziell audio' },
-  { label: '🇩🇪 Luciano',              query: 'luciano offiziell audio' },
-  { label: '🇩🇪 Gzuz',                 query: 'gzuz offiziell audio 187' },
-  { label: '🇩🇪 Shindy',               query: 'shindy offiziell audio' },
+  // ── R&B & Soul 🎷 ────────────────────────────────────────────────────────
+  { label: 'Frank Ocean – Thinking Bout You',         query: 'frank ocean thinking bout you official' },
+  { label: 'H.E.R. – Focus',                         query: 'her focus official audio' },
+  { label: 'Summer Walker – Girls Need Love',         query: 'summer walker girls need love official' },
+
+  // ── EDM & Electronic ⚡ ──────────────────────────────────────────────────
+  { label: 'Martin Garrix – Animals',                 query: 'martin garrix animals official audio' },
+  { label: 'David Guetta – Titanium',                 query: 'david guetta titanium official audio' },
+  { label: 'Avicii – Wake Me Up',                     query: 'avicii wake me up official audio' },
+  { label: 'Avicii – Levels',                         query: 'avicii levels official audio' },
+  { label: 'Calvin Harris – Summer',                  query: 'calvin harris summer official audio' },
+
+  // ── K-Pop ⭐ ─────────────────────────────────────────────────────────────
+  { label: 'BTS – Dynamite',                          query: 'bts dynamite official audio' },
+  { label: 'BTS – Boy With Luv',                      query: 'bts boy with luv official audio' },
+  { label: 'BLACKPINK – Pink Venom',                  query: 'blackpink pink venom official audio' },
+  { label: 'BLACKPINK – DDU-DU DDU-DU',               query: 'blackpink ddu-du ddu-du official' },
+
+  // ── Deutschrap 🇩🇪 ────────────────────────────────────────────────────────
+  { label: 'Capital Bra – Neymar',                    query: 'capital bra neymar offiziell audio' },
+  { label: 'Luciano – Blaues Licht',                  query: 'luciano blaues licht offiziell audio' },
+  { label: 'Gzuz – Hobby',                            query: 'gzuz hobby offiziell audio' },
+  { label: 'Shindy – Oriente',                        query: 'shindy oriente offiziell audio' },
+  { label: 'Ufo361 – Ich bin 3 Schritte voraus',      query: 'ufo361 ich bin 3 schritte voraus' },
+  { label: 'Bonez MC – Keine Liebe',                  query: 'bonez mc keine liebe offiziell audio' },
+  { label: 'Samra – Wolke 10',                        query: 'samra wolke 10 offiziell audio' },
+  { label: 'Summer Cem – Estland',                    query: 'summer cem estland offiziell audio' },
 ];
 
 // ── GENRES (Browse) ──────────────────────────────────────────────────────────
