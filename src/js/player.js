@@ -101,7 +101,7 @@ let eqValues = [0, 0, 0, 0, 0, 0, 0];
 
 // ── Pre-roll Ad System ────────────────────────────────────────────────────────
 let _songsPlayed = 0;
-const AD_EVERY   = 3;   // show ad every N songs
+const AD_EVERY   = 5;   // show ad every N songs
 const AD_SECS    = 15;  // duration in seconds
 
 const PREROLL_ADS = [
@@ -132,6 +132,12 @@ function showPreRollAd() {
   return new Promise(resolve => {
     const ad = PREROLL_ADS[_adRotateIdx % PREROLL_ADS.length];
     _adRotateIdx++;
+
+    // Stop current music during ad
+    if (audioEl && !audioEl.paused) {
+      audioEl.pause();
+      updatePlayBtn(false);
+    }
 
     lockPlayerControls(true);
 
@@ -189,21 +195,19 @@ function initPlayer() {
     setTimeout(nextTrack, 1500);
   });
 
-  // Progress bar drag — pause during seek to avoid noise, resume on release
-  let _wasPlayingBeforeSeek = false;
+  // Progress bar drag — mute during drag (no noise), unmute instantly on release
   const bar = document.getElementById('progress-bar');
   bar.addEventListener('mousedown', (e) => {
     if (_adInProgress) return;
     isDragging = true;
-    _wasPlayingBeforeSeek = !audioEl.paused;
-    if (_wasPlayingBeforeSeek) audioEl.pause();
+    audioEl.muted = true;   // silence but keep buffering → instant resume
     seekFromEvent(e);
   });
   document.addEventListener('mousemove', (e) => { if (isDragging) seekFromEvent(e); });
   document.addEventListener('mouseup', () => {
     if (!isDragging) return;
     isDragging = false;
-    if (_wasPlayingBeforeSeek) AudioEngine.play().then(() => updatePlayBtn(true));
+    audioEl.muted = false;  // unmute immediately — no re-buffer needed
   });
 }
 
