@@ -19,6 +19,11 @@ jobs:
           node-version: 20
       - name: Install dependencies
         run: npm install
+      - name: Download yt-dlp for Windows
+        run: |
+          mkdir -p bin
+          curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe -o bin/yt-dlp.exe
+        shell: bash
       - name: Build Windows installer
         run: npm run build:win
         env:
