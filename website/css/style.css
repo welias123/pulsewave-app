@@ -292,6 +292,90 @@ body {
   white-space: nowrap;
 }
 
+/* ── Pricing ── */
+.pricing { padding: 100px 0; background: var(--bg2); }
+.pricing-sub {
+  font-size: 18px; color: var(--muted); max-width: 520px;
+  margin-top: -30px; margin-bottom: 56px; line-height: 1.6;
+}
+.pricing-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px; max-width: 760px; margin-bottom: 32px;
+}
+.pricing-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 24px; padding: 36px 32px;
+  display: flex; flex-direction: column; gap: 0;
+  position: relative;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.pricing-card:hover { transform: translateY(-3px); }
+.pricing-card-premium {
+  background: linear-gradient(145deg, rgba(255,214,0,0.06), var(--card));
+  border-color: rgba(255,214,0,0.35);
+  box-shadow: 0 0 60px rgba(255,214,0,0.06);
+}
+.pricing-badge {
+  position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+  background: var(--yellow); color: #000;
+  font-size: 12px; font-weight: 800; letter-spacing: 0.5px;
+  padding: 5px 16px; border-radius: 20px;
+  white-space: nowrap;
+}
+.pricing-tier {
+  font-size: 13px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+.pricing-price {
+  font-size: 52px; font-weight: 900; letter-spacing: -2px;
+  line-height: 1; margin-bottom: 12px;
+}
+.pricing-price span { font-size: 18px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+.pricing-desc { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 24px; }
+.pricing-features {
+  list-style: none; display: flex; flex-direction: column;
+  gap: 11px; margin-bottom: 32px; flex: 1;
+}
+.pricing-features li {
+  font-size: 14px; color: var(--muted);
+  display: flex; align-items: center; gap: 10px;
+}
+.pricing-features li strong { color: var(--text); }
+.feat-check { color: #4caf50; font-weight: 700; font-size: 15px; flex-shrink: 0; }
+.feat-check.gold { color: var(--yellow); }
+.feat-cross { color: var(--muted2); font-weight: 700; font-size: 15px; flex-shrink: 0; }
+.pricing-btn {
+  display: flex; align-items: center; justify-content: center;
+  padding: 14px 20px; border-radius: 14px;
+  font-size: 15px; font-weight: 700;
+  text-decoration: none; transition: all 0.2s;
+  text-align: center;
+}
+.pricing-btn-free {
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--border2);
+}
+.pricing-btn-free:hover { color: var(--text); border-color: var(--border); background: rgba(255,255,255,0.04); }
+.pricing-btn-premium {
+  background: linear-gradient(135deg, #FFD600, #FF9900);
+  color: #000;
+}
+.pricing-btn-premium:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(255,214,0,0.35);
+}
+.pricing-note {
+  font-size: 12px; color: var(--muted2); text-align: center; margin-top: 10px;
+}
+.pricing-faq {
+  font-size: 14px; color: var(--muted2); max-width: 760px;
+  padding: 20px 24px; background: var(--card);
+  border: 1px solid var(--border); border-radius: 14px;
+}
+.pricing-faq strong { color: var(--muted); }
+
 /* ── Download ── */
 .download { padding: 100px 0; background: var(--bg); }
 .download-sub {
