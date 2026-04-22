@@ -126,9 +126,12 @@
           <span id="premium-badge-sidebar" style="display:none;font-size:10px;color:#FFD600;font-weight:700">⭐ PREMIUM</span>
         </div>
       </div>
-      <button class="btn-logout" onclick="logout()" title="Logout">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
-      </button>
+      <div style="display:flex;gap:6px">
+        <button onclick="openCodeRedeemModal()" title="Premium-Code eingeben" style="background:#1a1a1a;border:none;color:#666;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center" onmouseover="this.style.color='#FFD600'" onmouseout="this.style.color='#666'">🔑</button>
+        <button class="btn-logout" onclick="logout()" title="Logout">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        </button>
+      </div>
     </div>
   </aside>
 
@@ -187,6 +190,7 @@
     </div>
     <button class="pm-cta" onclick="openStripeCheckout()">⭐ Jetzt upgraden — €2/Monat</button>
     <p class="pm-note">🔒 Sicheres Bezahlen via Stripe · SSL verschlüsselt · Jederzeit kündbar</p>
+    <button onclick="closePremiumModal();openCodeRedeemModal()" style="margin-top:12px;width:100%;background:transparent;border:1.5px solid #2a2a2a;border-radius:12px;padding:12px;color:#888;font-size:13px;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='#FFD600';this.style.color='#FFD600'" onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#888'">🔑 Ich habe bereits einen Code</button>
   </div>
 </div>
 

@@ -37,7 +37,8 @@ function initPremium(isPremium) {
     if (premBadge)  premBadge.style.display   = 'none';
     if (sleepBtn)   sleepBtn.style.display    = 'none';
     document.body.classList.remove('premium-theme');
-    // Rotate ad every 5 minutes
+    // Show first ad immediately, then rotate every 5 minutes
+    showNextAd();
     setInterval(showNextAd, 5 * 60 * 1000);
   }
 }
