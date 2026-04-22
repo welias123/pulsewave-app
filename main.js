@@ -30,7 +30,10 @@ function nextId(arr) { return arr.length ? Math.max(...arr.map(x => x.id)) + 1 :
 
 // ── yt-dlp path ──────────────────────────────────────────────────────────
 function ytdlp() {
-  const d = path.join(__dirname, 'bin');
+  // In packaged app, bin is extracted to app.asar.unpacked; in dev use __dirname
+  const d = app.isPackaged
+    ? path.join(process.resourcesPath, 'app.asar.unpacked', 'bin')
+    : path.join(__dirname, 'bin');
   return process.platform === 'win32' ? path.join(d, 'yt-dlp.exe') : path.join(d, 'yt-dlp');
 }
 function fmtDur(s) { if (!s) return '0:00'; const m = Math.floor(s/60); return `${m}:${String(Math.floor(s%60)).padStart(2,'0')}`; }
