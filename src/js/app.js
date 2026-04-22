@@ -236,7 +236,7 @@ const HOME_QUERIES = [
   { label: '🔥 Kendrick Lamar – Not Like Us',         query: 'kendrick lamar not like us official audio' },
   { label: '🔥 Charli XCX – 360',                    query: 'charli xcx 360 official audio' },
   { label: '🔥 Billie Eilish – Birds Of A Feather',   query: 'billie eilish birds of a feather official' },
-  { label: '🔥 Gracie Abrams – That's So True',       query: 'gracie abrams thats so true official audio' },
+  { label: '🔥 Gracie Abrams – That\'s So True',      query: 'gracie abrams thats so true official audio' },
   { label: '🔥 Teddy Swims – Lose Control',           query: 'teddy swims lose control official audio' },
 
   // ── Hip-Hop & Rap 🎤 ─────────────────────────────────────────────────────
