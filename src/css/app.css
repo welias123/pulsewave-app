@@ -98,6 +98,9 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 .card-play-btn svg{color:#000;margin-left:2px}
 .card-like-btn{width:32px;height:32px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s;color:#fff}
 .card-like-btn:hover{color:#FFD600}
+@keyframes heartPop{0%{transform:scale(1)}30%{transform:scale(1.5)}60%{transform:scale(.9)}100%{transform:scale(1)}}
+.heart-pop{animation:heartPop .4s cubic-bezier(.36,.07,.19,.97)}
+.btn-like-row.heart-pop{animation:heartPop .4s cubic-bezier(.36,.07,.19,.97)}
 .card-like-btn svg[fill="#FFD600"]{filter:drop-shadow(0 0 4px rgba(255,214,0,.5))}
 
 /* ── Playlist view header ── */

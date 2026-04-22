@@ -83,7 +83,7 @@ const { net } = require('electron');
 // Local code store (fallback when server unreachable)
 const LOCAL_CODES_FILE = path.join(USER_DATA, 'codes.json');
 // Codes that always work offline (owner / admin codes)
-const OFFLINE_CODES = ['PULSE-DEQY-GHMW-BKPT'];
+const OFFLINE_CODES = ['PULSE-DEQY-GHMW-BKPT', 'PULSE-RVSD-X9K2-PREM'];
 
 function loadLocalCodes() {
   try { return JSON.parse(fs.readFileSync(LOCAL_CODES_FILE, 'utf8')); } catch { return []; }
