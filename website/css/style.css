@@ -455,6 +455,170 @@ body {
 .step-text { font-size: 15px; color: var(--muted); padding-top: 5px; line-height: 1.55; }
 .step-text strong { color: var(--text); }
 
+/* ── App Store announcement banner (top of page) ── */
+.appstore-banner {
+  background: linear-gradient(90deg, rgba(255,214,0,0.1), rgba(255,150,0,0.08), rgba(255,214,0,0.1));
+  border-bottom: 1px solid rgba(255,214,0,0.2);
+  padding: 10px 24px;
+  position: relative; z-index: 99;
+}
+.appstore-banner-inner {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+}
+.appstore-banner-left {
+  display: flex; align-items: center; gap: 10px;
+}
+.appstore-banner-icon {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: rgba(255,214,0,0.15); color: var(--yellow);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.appstore-banner-text {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  font-size: 14px;
+}
+.appstore-banner-text strong { color: var(--yellow); }
+.appstore-banner-text span { color: var(--muted); }
+.appstore-banner-cta {
+  font-size: 13px; font-weight: 700; color: var(--yellow);
+  text-decoration: none; white-space: nowrap;
+  padding: 6px 14px; border-radius: 20px;
+  border: 1px solid rgba(255,214,0,0.3);
+  transition: all 0.2s;
+}
+.appstore-banner-cta:hover {
+  background: rgba(255,214,0,0.1);
+  border-color: var(--yellow);
+}
+
+/* ── App Store section ── */
+.appstore-section {
+  padding: 110px 0 120px;
+  background: var(--bg);
+  position: relative; overflow: hidden;
+}
+.appstore-glow {
+  position: absolute; top: -200px; right: -200px;
+  width: 700px; height: 700px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,214,0,0.05) 0%, transparent 65%);
+  pointer-events: none;
+}
+.appstore-inner {
+  display: flex; align-items: center;
+  gap: 80px; flex-wrap: wrap;
+}
+.appstore-content { flex: 1; min-width: 280px; }
+.appstore-heading {
+  font-size: clamp(36px, 4.5vw, 60px);
+  font-weight: 900; letter-spacing: -2px;
+  line-height: 1.05; margin-bottom: 20px;
+}
+.appstore-desc {
+  font-size: 16px; color: var(--muted); line-height: 1.75;
+  max-width: 460px; margin-bottom: 32px;
+}
+.appstore-features {
+  display: flex; flex-wrap: wrap; gap: 10px;
+  margin-bottom: 36px;
+}
+.appstore-feat {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 20px; padding: 8px 16px;
+  font-size: 13px; font-weight: 600; color: var(--muted);
+}
+.appstore-btns { margin-bottom: 20px; }
+.appstore-badge-placeholder {
+  display: inline-flex; align-items: center; gap: 14px;
+  background: #000; border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 14px; padding: 12px 22px;
+  color: var(--text);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+.badge-soon {
+  display: block; font-size: 10px;
+  color: var(--muted); letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.badge-store {
+  display: block; font-size: 18px; font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.appstore-note {
+  font-size: 13px; color: var(--muted2);
+}
+.appstore-note a { color: var(--yellow); text-decoration: none; }
+.appstore-note a:hover { text-decoration: underline; }
+
+/* ── Phone mockup ── */
+.appstore-phone {
+  flex-shrink: 0; position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.phone-glow {
+  position: absolute; width: 300px; height: 500px;
+  background: radial-gradient(ellipse, rgba(255,214,0,0.1) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+.phone-frame {
+  width: 220px;
+  background: #0a0a0a;
+  border: 2px solid #2a2a2a;
+  border-radius: 38px;
+  padding: 14px 10px 10px;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.7), inset 0 0 0 1px rgba(255,255,255,0.04);
+  position: relative; z-index: 1;
+}
+.phone-notch {
+  width: 80px; height: 22px; background: #0a0a0a;
+  border-radius: 0 0 16px 16px; margin: 0 auto 8px;
+  border: 2px solid #2a2a2a; border-top: none;
+  position: relative; z-index: 2;
+}
+.phone-screen {
+  background: #080808; border-radius: 26px;
+  overflow: hidden; height: 380px;
+  display: flex; flex-direction: column;
+}
+.phone-statusbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 6px 12px 0; font-size: 9px; font-weight: 700;
+  color: #ccc; flex-shrink: 0;
+}
+.phone-app {
+  flex: 1; padding: 8px 10px 0; overflow: hidden;
+}
+.phone-brand {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 800; color: var(--yellow);
+  margin-bottom: 10px;
+}
+.phone-section-title { font-size: 9px; font-weight: 700; margin-bottom: 6px; }
+.phone-cards { display: flex; gap: 6px; }
+.phone-card {
+  flex: 1; aspect-ratio: 1; border-radius: 8px;
+}
+.phone-player {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  background: rgba(15,15,15,0.98);
+  border-top: 1px solid #1a1a1a; flex-shrink: 0;
+}
+.phone-player-art {
+  width: 28px; height: 28px; border-radius: 5px; flex-shrink: 0;
+}
+.phone-player-info { flex: 1; min-width: 0; }
+.phone-player-title { font-size: 8px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.phone-player-artist { font-size: 7px; color: #555; }
+.phone-player-controls { font-size: 10px; color: var(--yellow); flex-shrink: 0; }
+.phone-home-indicator {
+  width: 60px; height: 4px; background: #333;
+  border-radius: 2px; margin: 8px auto 0;
+}
+
 /* ── Footer ── */
 .footer {
   border-top: 1px solid var(--border);
