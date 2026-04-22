@@ -105,6 +105,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
         History
       </a>
+      <a href="#" class="nav-item" onclick="navigate('settings',this)" id="nav-settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Einstellungen
+      </a>
     </nav>
 
     <div class="sidebar-section">
@@ -163,6 +167,7 @@
     <div id="view-history"  class="view" style="display:none"></div>
     <div id="view-playlist" class="view" style="display:none"></div>
     <div id="view-genre"    class="view" style="display:none"></div>
+    <div id="view-settings" class="view" style="display:none"></div>
   </main>
 </div>
 
@@ -199,6 +204,26 @@
     <button class="pm-cta" onclick="openStripeCheckout()">⭐ Jetzt upgraden — €2/Monat</button>
     <p class="pm-note">🔒 Sicheres Bezahlen via Stripe · SSL verschlüsselt · Jederzeit kündbar</p>
     <button onclick="closePremiumModal();openCodeRedeemModal()" style="margin-top:12px;width:100%;background:transparent;border:1.5px solid #2a2a2a;border-radius:12px;padding:12px;color:#888;font-size:13px;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='#FFD600';this.style.color='#FFD600'" onmouseout="this.style.borderColor='#2a2a2a';this.style.color='#888'">🔑 Ich habe bereits einen Code</button>
+  </div>
+</div>
+
+<!-- Cancel Subscription Confirmation Modal -->
+<div id="cancel-sub-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)document.getElementById('cancel-sub-modal').style.display='none'">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:380px;text-align:center">
+    <div style="font-size:36px;margin-bottom:12px">😢</div>
+    <h3 style="margin:0 0 8px">Abo wirklich kündigen?</h3>
+    <p style="color:#888;font-size:13px;margin:0 0 8px">Du verlierst alle Premium-Vorteile:</p>
+    <ul style="color:#666;font-size:12px;text-align:left;margin:0 0 20px;padding-left:20px;line-height:1.8">
+      <li>Werbung wird wieder angezeigt</li>
+      <li>Kein Crossfade mehr</li>
+      <li>Sleep Timer nicht mehr verfügbar</li>
+      <li>Keine eigenen EQ-Presets</li>
+      <li>Gold Theme wird deaktiviert</li>
+    </ul>
+    <div style="display:flex;gap:10px">
+      <button onclick="document.getElementById('cancel-sub-modal').style.display='none'" style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;color:#ccc;padding:12px;border-radius:12px;cursor:pointer;font-size:14px;transition:.2s" onmouseover="this.style.borderColor='#444'" onmouseout="this.style.borderColor='#2a2a2a'">Abbrechen</button>
+      <button onclick="confirmCancelSubscription()" style="flex:1;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:#ef4444;padding:12px;border-radius:12px;cursor:pointer;font-size:14px;transition:.2s" onmouseover="this.style.background='rgba(239,68,68,.2)'" onmouseout="this.style.background='rgba(239,68,68,.12)'">Ja, kündigen</button>
+    </div>
   </div>
 </div>
 

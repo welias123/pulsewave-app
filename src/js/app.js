@@ -505,8 +505,9 @@ function navigate(view, el) {
   if      (view === 'search')  { document.getElementById('search-input').focus(); if (!target.innerHTML.trim()) renderSearchEmpty(); }
   else if (view === 'liked')   { refreshLikedView(); }
   else if (view === 'history') { refreshHistoryView(); }
-  else if (view === 'browse')  { loadBrowse(); }
-  else if (view === 'radio')   { loadRadio(); }
+  else if (view === 'browse')   { loadBrowse(); }
+  else if (view === 'radio')    { loadRadio(); }
+  else if (view === 'settings') { loadSettings(); }
 }
 
 function navigateToPlaylist(playlistId) {
@@ -1131,6 +1132,235 @@ function makeCard(track, allTracks, idx) {
 function logout() {
   try { localStorage.removeItem('pw_session'); } catch {}
   pw.goToLogin();
+}
+
+// ── Account Settings ──────────────────────────────────────────────────────────
+
+let _normEnabled = true;
+
+function loadSettings() {
+  const view = document.getElementById('view-settings');
+  _renderSettings(view);
+}
+
+function _renderSettings(view) {
+  const isPrem = _isPremium;
+  const normOn = typeof AudioEngine !== 'undefined' ? AudioEngine.isNormalizationEnabled() : _normEnabled;
+  const cfBtn  = document.getElementById('btn-crossfade');
+  const cfOn   = cfBtn?.classList.contains('active') || false;
+
+  view.innerHTML = `
+    <div class="settings-page">
+      <h2 class="section-title">Einstellungen</h2>
+
+      <!-- Account section -->
+      <div class="settings-section">
+        <div class="settings-section-title">Mein Account</div>
+        <div class="settings-account-card">
+          <div class="settings-avatar">${(_username||'?')[0].toUpperCase()}</div>
+          <div class="settings-account-info">
+            <div class="settings-username">${esc(_username||'')}</div>
+            <div class="settings-plan">${isPrem ? '⭐ Pulsewave Premium' : 'Kostenlos'}</div>
+          </div>
+          ${isPrem ? `<span class="settings-premium-badge">PREMIUM</span>` : `<button class="settings-upgrade-btn" onclick="openPremiumModal()">Upgraden →</button>`}
+        </div>
+      </div>
+
+      <!-- Subscription section (only for premium users) -->
+      ${isPrem ? `
+      <div class="settings-section">
+        <div class="settings-section-title">Abonnement</div>
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Plan</div>
+            <div class="settings-row-sub">Pulsewave Premium · €2/Monat</div>
+          </div>
+          <span class="settings-badge-green">Aktiv</span>
+        </div>
+        <div class="settings-row settings-row-danger" onclick="openCancelSubModal()">
+          <div>
+            <div class="settings-row-label" style="color:#ef4444">Abo kündigen</div>
+            <div class="settings-row-sub">Premium läuft bis zum Ende der Abrechnungsperiode</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>` : ''}
+
+      <!-- Playback settings -->
+      <div class="settings-section">
+        <div class="settings-section-title">Wiedergabe</div>
+
+        <div class="settings-row settings-row-toggle">
+          <div>
+            <div class="settings-row-label">Lautstärke-Normalisierung</div>
+            <div class="settings-row-sub">Gleicht Lautstärkeunterschiede zwischen Songs aus (wie Apple Music Sound Check)</div>
+          </div>
+          <label class="settings-toggle">
+            <input type="checkbox" id="toggle-norm" ${normOn ? 'checked' : ''} onchange="toggleNormalization(this.checked)"/>
+            <span class="settings-toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-row settings-row-toggle">
+          <div>
+            <div class="settings-row-label">Crossfade ${!isPrem ? '<span class="settings-premium-lock">⭐ Premium</span>' : ''}</div>
+            <div class="settings-row-sub">Sanfter Übergang zwischen Songs (4 Sekunden)</div>
+          </div>
+          <label class="settings-toggle ${!isPrem ? 'settings-toggle-locked' : ''}">
+            <input type="checkbox" id="toggle-cf" ${cfOn ? 'checked' : ''} onchange="toggleCrossfadeSettings(this.checked)" ${!isPrem ? 'disabled' : ''}/>
+            <span class="settings-toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-row" onclick="toggleEQ()" style="cursor:pointer">
+          <div>
+            <div class="settings-row-label">Equalizer</div>
+            <div class="settings-row-sub">Bass, Mitten, Höhen individuell einstellen</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+
+        <div class="settings-row">
+          <div>
+            <div class="settings-row-label">Audioqualität</div>
+            <div class="settings-row-sub">Beste verfügbare Qualität (AAC / Opus, bis 320 kbps)</div>
+          </div>
+          <span class="settings-badge-blue">Sehr hoch</span>
+        </div>
+      </div>
+
+      <!-- Datenschutz section -->
+      <div class="settings-section">
+        <div class="settings-section-title">Datenschutz &amp; Daten</div>
+        <div class="settings-row settings-row-action" onclick="clearHistoryConfirm()">
+          <div>
+            <div class="settings-row-label">Hörverlauf löschen</div>
+            <div class="settings-row-sub">Alle zuletzt gespielten Songs entfernen</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="settings-row settings-row-action" onclick="clearLikedConfirm()">
+          <div>
+            <div class="settings-row-label">Gefällt mir-Liste leeren</div>
+            <div class="settings-row-sub">Alle gespeicherten Songs entfernen</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+
+      <!-- Account actions -->
+      <div class="settings-section">
+        <div class="settings-section-title">Account</div>
+        <div class="settings-row settings-row-action" onclick="openChangePasswordModal()">
+          <div>
+            <div class="settings-row-label">Passwort ändern</div>
+            <div class="settings-row-sub">Neues Passwort festlegen</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="settings-row settings-row-action" onclick="openCodeRedeemModal()">
+          <div>
+            <div class="settings-row-label">Premium-Code einlösen</div>
+            <div class="settings-row-sub">Code eingeben um Premium zu aktivieren</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="settings-row settings-row-danger" onclick="logout()">
+          <div>
+            <div class="settings-row-label" style="color:#ef4444">Abmelden</div>
+            <div class="settings-row-sub">Aus diesem Account ausloggen</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" width="16" height="16"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        </div>
+      </div>
+
+      <div style="text-align:center;color:#333;font-size:11px;padding:24px 0">
+        Pulsewave v${typeof appVersion !== 'undefined' ? appVersion : '1.5.19'} · Made with ♥
+      </div>
+    </div>`;
+}
+
+function toggleNormalization(enabled) {
+  _normEnabled = enabled;
+  if (typeof AudioEngine !== 'undefined') AudioEngine.setNormalization(enabled);
+  try { localStorage.setItem('pw_norm', enabled ? '1' : '0'); } catch {}
+  showNotif(enabled ? '🎚️ Normalisierung aktiviert' : '🎚️ Normalisierung deaktiviert');
+}
+
+function toggleCrossfadeSettings(enabled) {
+  const btn = document.getElementById('btn-crossfade');
+  if (btn) { btn.classList.toggle('active', enabled); }
+  if (typeof setCrossfade === 'function') setCrossfade(enabled);
+  showNotif(enabled ? '🔀 Crossfade aktiviert' : '🔀 Crossfade deaktiviert');
+}
+
+function openCancelSubModal() {
+  document.getElementById('cancel-sub-modal').style.display = 'flex';
+}
+
+async function confirmCancelSubscription() {
+  document.getElementById('cancel-sub-modal').style.display = 'none';
+  // Deactivate premium locally
+  await pw.cancelPremium({ userId: _userId });
+  _isPremium = false;
+  window._isPremium = false;
+  initPremium(false);
+  // Re-render settings
+  const view = document.getElementById('view-settings');
+  if (view && view.style.display !== 'none') _renderSettings(view);
+  showNotif('Premium wurde gekündigt');
+}
+
+async function clearHistoryConfirm() {
+  if (!confirm('Hörverlauf wirklich löschen?')) return;
+  await pw.clearHistory({ userId: _userId });
+  showNotif('Hörverlauf gelöscht');
+}
+
+async function clearLikedConfirm() {
+  if (!confirm('Alle gespeicherten Songs wirklich entfernen?')) return;
+  await pw.clearLiked({ userId: _userId });
+  showNotif('Gefällt mir-Liste geleert');
+}
+
+// Change password modal
+function openChangePasswordModal() {
+  const existing = document.getElementById('change-pw-modal');
+  if (existing) { existing.style.display = 'flex'; return; }
+  const m = document.createElement('div');
+  m.id = 'change-pw-modal';
+  m.className = 'modal-overlay';
+  m.innerHTML = `
+    <div class="modal" onclick="event.stopPropagation()" style="max-width:340px">
+      <h3>🔒 Passwort ändern</h3>
+      <div class="field" style="margin-top:16px">
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:6px">Neues Passwort</label>
+        <input type="password" id="new-pw" placeholder="Mindestens 4 Zeichen" style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:10px 12px;color:#fff;font-size:14px;outline:none;box-sizing:border-box"/>
+      </div>
+      <div class="field" style="margin-top:10px">
+        <label style="font-size:12px;color:#888;display:block;margin-bottom:6px">Wiederholen</label>
+        <input type="password" id="new-pw2" placeholder="Passwort bestätigen" style="width:100%;background:#111;border:1px solid #2a2a2a;border-radius:10px;padding:10px 12px;color:#fff;font-size:14px;outline:none;box-sizing:border-box"/>
+      </div>
+      <div id="pw-change-err" style="color:#ef4444;font-size:12px;margin-top:8px;display:none"></div>
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button onclick="document.getElementById('change-pw-modal').style.display='none'" style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;color:#ccc;padding:11px;border-radius:10px;cursor:pointer;font-size:13px">Abbrechen</button>
+        <button onclick="submitPasswordChange()" style="flex:1;background:var(--yellow);border:none;color:#000;padding:11px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:700">Speichern</button>
+      </div>
+    </div>`;
+  m.onclick = (e) => { if (e.target === m) m.style.display = 'none'; };
+  document.body.appendChild(m);
+}
+
+async function submitPasswordChange() {
+  const pw1 = document.getElementById('new-pw').value;
+  const pw2 = document.getElementById('new-pw2').value;
+  const err = document.getElementById('pw-change-err');
+  err.style.display = 'none';
+  if (pw1.length < 4) { err.textContent = 'Mindestens 4 Zeichen'; err.style.display = 'block'; return; }
+  if (pw1 !== pw2)    { err.textContent = 'Passwörter stimmen nicht überein'; err.style.display = 'block'; return; }
+  await pw.changePassword({ userId: _userId, password: pw1 });
+  document.getElementById('change-pw-modal').style.display = 'none';
+  showNotif('✅ Passwort geändert');
 }
 
 function getGreeting() {

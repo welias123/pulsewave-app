@@ -36,7 +36,11 @@ contextBridge.exposeInMainWorld('pw', {
   getHistory:   (uid)  => ipcRenderer.invoke('get-history', uid),
 
   // Premium
-  redeemCode: (d) => ipcRenderer.invoke('redeem-code', d),
+  redeemCode:      (d) => ipcRenderer.invoke('redeem-code', d),
+  cancelPremium:   (d) => ipcRenderer.invoke('cancel-premium', d),
+  changePassword:  (d) => ipcRenderer.invoke('change-password', d),
+  clearHistory:    (d) => ipcRenderer.invoke('clear-history', d),
+  clearLiked:      (d) => ipcRenderer.invoke('clear-liked', d),
 
   // Auto-updater
   onUpdateAvailable: (cb) => ipcRenderer.on('update-available', (_, v) => cb(v)),

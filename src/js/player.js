@@ -1,9 +1,10 @@
 // ── Pulsewave Audio Engine + Equalizer ──────────────────────────────────────
 
 const AudioEngine = (() => {
-  let ctx, source, gainNode, analyser;
+  let ctx, source, gainNode, analyser, compressor;
   let audioEl = null;
   let eqFilters = [];
+  let normEnabled = true; // Lautstärke-Normalisierung (Sound Check)
 
   // EQ band definitions: [freq, type, label]
   const BANDS = [
@@ -31,7 +32,15 @@ const AudioEngine = (() => {
     source   = ctx.createMediaElementSource(el);
     gainNode = ctx.createGain();
     analyser = ctx.createAnalyser();
-    analyser.fftSize = 256;
+    analyser.fftSize = 512; // Higher resolution for better visualizer
+
+    // DynamicsCompressor — Lautstärke-Normalisierung (wie Apple Music "Sound Check")
+    compressor = ctx.createDynamicsCompressor();
+    compressor.threshold.value = -18;  // starts compressing at -18 dBFS
+    compressor.knee.value       = 8;   // smooth knee
+    compressor.ratio.value      = 3;   // gentle 3:1 ratio
+    compressor.attack.value     = 0.003;
+    compressor.release.value    = 0.25;
 
     // Build EQ chain
     eqFilters = BANDS.map(([freq, type]) => {
@@ -43,11 +52,12 @@ const AudioEngine = (() => {
       return f;
     });
 
-    // Connect: source → eq[0] → eq[1] → ... → gain → analyser → dest
+    // Connect: source → eq[0..n] → gain → compressor → analyser → dest
     let prev = source;
     for (const f of eqFilters) { prev.connect(f); prev = f; }
     prev.connect(gainNode);
-    gainNode.connect(analyser);
+    gainNode.connect(compressor);
+    compressor.connect(analyser);
     analyser.connect(ctx.destination);
   }
 
@@ -82,6 +92,22 @@ const AudioEngine = (() => {
     getBandCount() { return BANDS.length; },
 
     getAnalyser() { return analyser; },
+
+    setNormalization(enabled) {
+      normEnabled = enabled;
+      if (!compressor) return;
+      if (enabled) {
+        // Reconnect with compressor
+        gainNode.disconnect();
+        gainNode.connect(compressor);
+      } else {
+        // Bypass compressor — connect gain directly to analyser
+        gainNode.disconnect();
+        gainNode.connect(analyser);
+      }
+    },
+
+    isNormalizationEnabled() { return normEnabled; },
   };
 })();
 

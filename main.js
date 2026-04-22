@@ -83,7 +83,7 @@ const { net } = require('electron');
 // Local code store (fallback when server unreachable)
 const LOCAL_CODES_FILE = path.join(USER_DATA, 'codes.json');
 // Codes that always work offline (owner / admin codes)
-const OFFLINE_CODES = ['PULSE-DEQY-GHMW-BKPT', 'PULSE-RVSD-X9K2-PREM', 'PULSE-4NKW-ZRJT-BXQM', 'PULSE-H7YC-VP8D-MNFL'];
+const OFFLINE_CODES = ['PULSE-DEQY-GHMW-BKPT', 'PULSE-RVSD-X9K2-PREM', 'PULSE-4NKW-ZRJT-BXQM', 'PULSE-H7YC-VP8D-MNFL', 'PULSE-J3MW-KZRV-9QBN'];
 
 // ── Always-Premium whitelist ──────────────────────────────────────────────────
 // These usernames ALWAYS have premium on every device, regardless of server.
@@ -343,4 +343,31 @@ ipcMain.handle('add-to-history', (_, { userId, track }) => {
 
 ipcMain.handle('get-history', (_, userId) => {
   return loadDB().history.filter(h => h.user_id === userId).slice(0, 30);
+});
+
+// ── Account settings ──────────────────────────────────────────────────────────
+ipcMain.handle('cancel-premium', (_, { userId }) => {
+  const db = loadDB();
+  const user = db.users.find(u => u.id === userId);
+  if (user) { user.is_premium = false; saveDB(db); }
+  return { ok: true };
+});
+
+ipcMain.handle('change-password', (_, { userId, password }) => {
+  const db = loadDB();
+  const user = db.users.find(u => u.id === userId);
+  if (user) { user.password = password; saveDB(db); }
+  return { ok: true };
+});
+
+ipcMain.handle('clear-history', (_, { userId }) => {
+  const db = loadDB();
+  db.history = db.history.filter(h => h.user_id !== userId);
+  saveDB(db); return { ok: true };
+});
+
+ipcMain.handle('clear-liked', (_, { userId }) => {
+  const db = loadDB();
+  db.liked = db.liked.filter(l => l.user_id !== userId);
+  saveDB(db); return { ok: true };
 });

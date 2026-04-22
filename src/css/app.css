@@ -423,6 +423,46 @@ body.premium-theme .progress-thumb{background:#FFD600;box-shadow:0 0 6px rgba(25
 .radio-card.radio-active .radio-play-icon{background:var(--yellow);color:#000;border-color:var(--yellow)}
 body.premium-theme .sidebar-brand span{background:linear-gradient(135deg,#FFD600,#FF9900);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 
+/* ══════════════════════════════════════════════════════════
+   SETTINGS PAGE
+══════════════════════════════════════════════════════════ */
+.settings-page{max-width:620px;margin:0 auto;padding:28px 24px 40px}
+.settings-section{background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:20px}
+.settings-section-title{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muted);padding:14px 18px 10px}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-top:1px solid var(--border);gap:12px;cursor:default}
+.settings-row:first-child{border-top:none}
+.settings-row-label{font-size:14px;font-weight:500;color:var(--text);margin-bottom:2px}
+.settings-row-sub{font-size:12px;color:var(--muted);line-height:1.4}
+.settings-row-action{cursor:pointer;transition:.15s}
+.settings-row-action:hover{background:rgba(255,255,255,.04)}
+.settings-row-danger{cursor:pointer;transition:.15s}
+.settings-row-danger:hover{background:rgba(239,68,68,.06)}
+.settings-row-toggle{cursor:default}
+
+/* Account card */
+.settings-account-card{display:flex;align-items:center;gap:14px;padding:16px 18px;border-top:1px solid var(--border)}
+.settings-avatar{width:48px;height:48px;border-radius:50%;background:var(--yellow);color:#000;font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.settings-account-info{flex:1;min-width:0}
+.settings-username{font-size:15px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.settings-plan{font-size:12px;color:var(--muted);margin-top:2px}
+.settings-premium-badge{background:linear-gradient(135deg,#FFD600,#FF9900);color:#000;font-size:10px;font-weight:800;letter-spacing:.8px;padding:3px 8px;border-radius:20px;white-space:nowrap}
+.settings-upgrade-btn{background:var(--yellow-dim);border:1px solid var(--yellow-glow);color:var(--yellow);font-size:12px;font-weight:700;padding:6px 14px;border-radius:20px;cursor:pointer;white-space:nowrap;transition:.15s}
+.settings-upgrade-btn:hover{background:rgba(255,214,0,.2)}
+
+/* Badges */
+.settings-badge-green{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#22c55e;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap}
+.settings-badge-blue{background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);color:#60a5fa;font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap}
+
+/* Toggle switch */
+.settings-toggle{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+.settings-toggle input{opacity:0;width:0;height:0}
+.settings-toggle-slider{position:absolute;inset:0;background:#2a2a2a;border-radius:24px;transition:.2s;cursor:pointer}
+.settings-toggle-slider:before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#666;border-radius:50%;transition:.2s}
+.settings-toggle input:checked + .settings-toggle-slider{background:var(--yellow)}
+.settings-toggle input:checked + .settings-toggle-slider:before{background:#000;transform:translateX(20px)}
+.settings-toggle-locked .settings-toggle-slider{opacity:.4;cursor:not-allowed}
+.settings-premium-lock{background:rgba(255,214,0,.12);color:var(--yellow);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:6px;vertical-align:middle}
+
 /* ── Pre-Roll Ad Overlay ───────────────────────────────────────────────────── */
 #preroll-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px)}
 .preroll-inner{background:#111;border:1.5px solid #2a2a2a;border-radius:24px;padding:36px;max-width:400px;width:100%;text-align:center}
