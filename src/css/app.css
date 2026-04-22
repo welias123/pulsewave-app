@@ -88,12 +88,17 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 .music-card{background:var(--card);border-radius:12px;overflow:hidden;cursor:pointer;transition:transform .2s,background .2s;position:relative}
 .music-card:hover{transform:translateY(-3px);background:var(--card2)}
 .music-card:hover .card-play-btn{opacity:1;transform:translateY(0)}
+.music-card:hover .card-like-btn{opacity:1}
 .card-art{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--card2)}
 .card-body{padding:10px 12px 12px}
 .card-title{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px}
 .card-sub{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.card-play-btn{position:absolute;bottom:52px;right:10px;width:40px;height:40px;background:var(--yellow);border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(6px);transition:.2s;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+.card-actions{position:absolute;bottom:52px;right:8px;display:flex;gap:6px;align-items:center}
+.card-play-btn{width:40px;height:40px;background:var(--yellow);border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(6px);transition:.2s;box-shadow:0 4px 16px rgba(0,0,0,.5)}
 .card-play-btn svg{color:#000;margin-left:2px}
+.card-like-btn{width:32px;height:32px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:.2s;color:#fff}
+.card-like-btn:hover{color:#FFD600}
+.card-like-btn svg[fill="#FFD600"]{filter:drop-shadow(0 0 4px rgba(255,214,0,.5))}
 
 /* ── Playlist view header ── */
 .pl-header{display:flex;align-items:flex-end;gap:20px;padding:20px 0 24px;margin-bottom:8px}

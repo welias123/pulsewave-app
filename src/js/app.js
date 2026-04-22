@@ -873,9 +873,32 @@ function makeCard(track, allTracks, idx) {
       <div class="card-title">${esc(track.title)}</div>
       <div class="card-sub">${esc(track.artist)}</div>
     </div>
-    <button class="card-play-btn" title="Play">
-      <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-    </button>`;
+    <div class="card-actions">
+      <button class="card-like-btn" title="Like">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+      </button>
+      <button class="card-play-btn" title="Play">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      </button>
+    </div>`;
+  // Set initial like state
+  const likeBtn = card.querySelector('.card-like-btn');
+  if (window._userId) {
+    pw.isLiked({ userId: window._userId, videoId: track.videoId }).then(liked => {
+      likeBtn.innerHTML = liked
+        ? `<svg viewBox="0 0 24 24" fill="#FFD600" width="15" height="15"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`
+        : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`;
+    });
+  }
+  likeBtn.onclick = async (e) => {
+    e.stopPropagation();
+    if (!window._userId) return;
+    const res = await pw.toggleLike({ userId: window._userId, track });
+    likeBtn.innerHTML = res.liked
+      ? `<svg viewBox="0 0 24 24" fill="#FFD600" width="15" height="15"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`
+      : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`;
+    if (typeof refreshLikedView === 'function') refreshLikedView();
+  };
   card.querySelector('.card-play-btn').onclick = (e) => { e.stopPropagation(); playTrack(track, allTracks, idx); };
   card.addEventListener('dblclick', () => playTrack(track, allTracks, idx));
   card.addEventListener('contextmenu', (e) => trackCtxMenu(e, track, allTracks, idx));
