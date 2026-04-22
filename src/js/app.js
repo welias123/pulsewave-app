@@ -892,7 +892,7 @@ function trackRowHTML(track, idx, allTracks, opts = {}) {
       <button class="btn-track-action" title="Add to playlist" onclick="openAddToPlaylistModal(${JSON.stringify(track).replace(/"/g,'&quot;')})">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       </button>
-      <button class="btn-track-action" title="Like" onclick="pw.toggleLike({userId:_userId,track:${JSON.stringify(track).replace(/"/g,'&quot;')}}).then(()=>refreshLikedView())">
+      <button class="btn-track-action btn-like-row" title="Like" data-vid="${esc(track.videoId)}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
       </button>
     </div>
@@ -909,7 +909,32 @@ function bindTrackRows(view, allTracks) {
       const plId = inPL ? parseInt(document.querySelector('.pl-sidebar-item.active')?.dataset.id) : null;
       trackCtxMenu(e, track, allTracks, i, { showRemove: plId });
     });
+
+    // Like button with visual feedback
+    const likeBtn = row.querySelector('.btn-like-row');
+    if (likeBtn && window._userId) {
+      // Load initial state
+      pw.isLiked({ userId: window._userId, videoId: track.videoId }).then(liked => {
+        _setRowLikeState(likeBtn, liked);
+      });
+      // Click handler
+      likeBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const uid = window._userId || _userId;
+        if (!uid) return;
+        const res = await pw.toggleLike({ userId: uid, track });
+        _setRowLikeState(likeBtn, res.liked);
+        if (typeof refreshLikedView === 'function') refreshLikedView();
+      });
+    }
   });
+}
+
+function _setRowLikeState(btn, liked) {
+  btn.innerHTML = liked
+    ? `<svg viewBox="0 0 24 24" fill="#FFD600" width="14" height="14"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>`;
+  btn.style.color = liked ? '#FFD600' : '';
 }
 
 function makeCard(track, allTracks, idx) {
