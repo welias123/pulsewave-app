@@ -425,41 +425,41 @@ const HOME_QUERIES = [
 
 // ── GENRES (Browse) ──────────────────────────────────────────────────────────
 const GENRES = [
-  { name:'Pop',        query:'top pop songs 2025',                emoji:'🎤', color:'linear-gradient(135deg,#e91e8c,#c2185b)' },
-  { name:'Hip-Hop',    query:'best hip hop rap 2025',             emoji:'🎤', color:'linear-gradient(135deg,#ff6b35,#f7931e)' },
-  { name:'Rock',       query:'best rock songs 2025',              emoji:'🎸', color:'linear-gradient(135deg,#c62828,#7b1fa2)' },
-  { name:'Electronic', query:'best electronic music EDM 2025',    emoji:'⚡', color:'linear-gradient(135deg,#1565c0,#7b1fa2)' },
-  { name:'R&B',        query:'best rnb soul 2025',                emoji:'🎵', color:'linear-gradient(135deg,#6a1b9a,#ad1457)' },
-  { name:'Latin',      query:'top latin music reggaeton 2025',    emoji:'🎺', color:'linear-gradient(135deg,#f9a825,#e65100)' },
-  { name:'Jazz',       query:'best jazz music chill 2024',        emoji:'🎷', color:'linear-gradient(135deg,#4e342e,#bf360c)' },
-  { name:'Classical',  query:'best classical music relaxing',     emoji:'🎻', color:'linear-gradient(135deg,#1a237e,#283593)' },
-  { name:'Country',    query:'best country songs 2025',           emoji:'🤠', color:'linear-gradient(135deg,#827717,#558b2f)' },
-  { name:'Metal',      query:'best metal songs heavy 2024',       emoji:'🤘', color:'linear-gradient(135deg,#212121,#b71c1c)' },
-  { name:'K-Pop',      query:'best kpop songs 2025',              emoji:'⭐', color:'linear-gradient(135deg,#ec407a,#ab47bc)' },
-  { name:'Indie',      query:'best indie alternative songs 2025', emoji:'🌿', color:'linear-gradient(135deg,#2e7d32,#00695c)' },
-  { name:'Reggae',     query:'best reggae music 2024',            emoji:'🌴', color:'linear-gradient(135deg,#388e3c,#f9a825)' },
-  { name:'Dance',      query:'best dance club music 2025',        emoji:'🕺', color:'linear-gradient(135deg,#0277bd,#00838f)' },
-  { name:'Soul',       query:'best soul music classic hits',      emoji:'❤️', color:'linear-gradient(135deg,#4a148c,#880e4f)' },
-  { name:'Workout',    query:'workout music gym motivation 2025',  emoji:'💪', color:'linear-gradient(135deg,#33691e,#1b5e20)' },
+  { name:'Pop',        query:'pop official audio song 2024',              emoji:'🎤', color:'linear-gradient(135deg,#e91e8c,#c2185b)' },
+  { name:'Hip-Hop',    query:'hip hop rap official audio song 2024',      emoji:'🎤', color:'linear-gradient(135deg,#ff6b35,#f7931e)' },
+  { name:'Rock',       query:'rock official music video song 2024',       emoji:'🎸', color:'linear-gradient(135deg,#c62828,#7b1fa2)' },
+  { name:'Electronic', query:'electronic EDM official audio track 2024',  emoji:'⚡', color:'linear-gradient(135deg,#1565c0,#7b1fa2)' },
+  { name:'R&B',        query:'rnb official audio song 2024',              emoji:'🎵', color:'linear-gradient(135deg,#6a1b9a,#ad1457)' },
+  { name:'Latin',      query:'latin reggaeton official video song 2024',  emoji:'🎺', color:'linear-gradient(135deg,#f9a825,#e65100)' },
+  { name:'Jazz',       query:'jazz official audio song instrumental',     emoji:'🎷', color:'linear-gradient(135deg,#4e342e,#bf360c)' },
+  { name:'Classical',  query:'classical music official audio symphony',   emoji:'🎻', color:'linear-gradient(135deg,#1a237e,#283593)' },
+  { name:'Country',    query:'country official music video song 2024',    emoji:'🤠', color:'linear-gradient(135deg,#827717,#558b2f)' },
+  { name:'Metal',      query:'heavy metal official music video song',     emoji:'🤘', color:'linear-gradient(135deg,#212121,#b71c1c)' },
+  { name:'K-Pop',      query:'kpop official music video song 2024',       emoji:'⭐', color:'linear-gradient(135deg,#ec407a,#ab47bc)' },
+  { name:'Indie',      query:'indie alternative official audio song 2024',emoji:'🌿', color:'linear-gradient(135deg,#2e7d32,#00695c)' },
+  { name:'Reggae',     query:'reggae official audio song 2024',           emoji:'🌴', color:'linear-gradient(135deg,#388e3c,#f9a825)' },
+  { name:'Dance',      query:'dance house official audio song 2024',      emoji:'🕺', color:'linear-gradient(135deg,#0277bd,#00838f)' },
+  { name:'Soul',       query:'soul official audio song 2024',             emoji:'❤️', color:'linear-gradient(135deg,#4a148c,#880e4f)' },
+  { name:'Workout',    query:'workout gym motivation official audio song', emoji:'💪', color:'linear-gradient(135deg,#33691e,#1b5e20)' },
 ];
 
 // ── RADIO STATIONS ────────────────────────────────────────────────────────────
 const RADIO_STATIONS = [
-  { name:'Top Hits Radio',    desc:'Die größten Charts weltweit',       query:'top chart hits 2025',              emoji:'🌍', color:'linear-gradient(135deg,#FFD600,#FF9900)' },
-  { name:'Chill Radio',       desc:'Lofi, Ambient & Entspannung',       query:'lofi chill beats relax',           emoji:'😌', color:'linear-gradient(135deg,#1565c0,#4fc3f7)' },
-  { name:'Hip-Hop Station',   desc:'Street Beats & Rap Hits',           query:'hip hop rap songs hits',           emoji:'🎤', color:'linear-gradient(135deg,#ff6b35,#c62828)' },
-  { name:'Pop Station',       desc:'Aktuelle Pop-Hits rund um die Uhr', query:'pop music hits songs',             emoji:'🎵', color:'linear-gradient(135deg,#e91e8c,#9c27b0)' },
-  { name:'Electronic Beats',  desc:'EDM, House & Techno',               query:'electronic dance EDM house music', emoji:'⚡', color:'linear-gradient(135deg,#1a237e,#7b1fa2)' },
-  { name:'Rock Station',      desc:'Classic Rock & Modern Hits',        query:'rock music classic songs',         emoji:'🎸', color:'linear-gradient(135deg,#b71c1c,#4a148c)' },
-  { name:'R&B Nights',        desc:'Smooth R&B für den Abend',          query:'rnb soul music smooth hits',       emoji:'🌙', color:'linear-gradient(135deg,#6a1b9a,#c62828)' },
-  { name:'Workout Mix',       desc:'Power & Energie für dein Training', query:'workout gym motivation songs',     emoji:'💪', color:'linear-gradient(135deg,#1b5e20,#f9a825)' },
-  { name:'Latin Vibes',       desc:'Reggaeton, Salsa & mehr',           query:'latin reggaeton songs 2025',       emoji:'🎺', color:'linear-gradient(135deg,#e65100,#f9a825)' },
-  { name:'K-Pop Station',     desc:'Die besten K-Pop Hits',             query:'kpop songs 2025 hits',             emoji:'⭐', color:'linear-gradient(135deg,#ad1457,#7b1fa2)' },
-  { name:'Metal Zone',        desc:'Heavy Metal & Hard Rock',           query:'heavy metal rock songs',           emoji:'🤘', color:'linear-gradient(135deg,#212121,#b71c1c)' },
-  { name:'Jazz Café',         desc:'Smooth Jazz zum Entspannen',        query:'jazz music smooth cafe chill',     emoji:'🎷', color:'linear-gradient(135deg,#4e342e,#bf360c)' },
-  { name:'Deutsche Hits',     desc:'Die besten deutschen Songs',        query:'deutsche musik hits charts',       emoji:'🇩🇪', color:'linear-gradient(135deg,#1565c0,#c62828)' },
-  { name:'90s Throwback',     desc:'Die besten Songs der 90er',         query:'90s hits classic songs nineties', emoji:'📼', color:'linear-gradient(135deg,#6a1b9a,#0288d1)' },
-  { name:'Sleep & Focus',     desc:'Ruhige Klänge zum Einschlafen',    query:'sleep music ambient calm relaxing', emoji:'🌙', color:'linear-gradient(135deg,#1a237e,#283593)' },
+  { name:'Top Hits Radio',    desc:'Die größten Charts weltweit',       query:'chart hit official audio song 2024',            emoji:'🌍', color:'linear-gradient(135deg,#FFD600,#FF9900)' },
+  { name:'Chill Radio',       desc:'Lofi, Ambient & Entspannung',       query:'lofi chill official audio song relax',           emoji:'😌', color:'linear-gradient(135deg,#1565c0,#4fc3f7)' },
+  { name:'Hip-Hop Station',   desc:'Street Beats & Rap Hits',           query:'hip hop rap official audio song 2024',           emoji:'🎤', color:'linear-gradient(135deg,#ff6b35,#c62828)' },
+  { name:'Pop Station',       desc:'Aktuelle Pop-Hits rund um die Uhr', query:'pop official audio song 2024',                   emoji:'🎵', color:'linear-gradient(135deg,#e91e8c,#9c27b0)' },
+  { name:'Electronic Beats',  desc:'EDM, House & Techno',               query:'electronic EDM house official audio track',      emoji:'⚡', color:'linear-gradient(135deg,#1a237e,#7b1fa2)' },
+  { name:'Rock Station',      desc:'Classic Rock & Modern Hits',        query:'rock official music video song',                 emoji:'🎸', color:'linear-gradient(135deg,#b71c1c,#4a148c)' },
+  { name:'R&B Nights',        desc:'Smooth R&B für den Abend',          query:'rnb soul official audio song 2024',              emoji:'🌙', color:'linear-gradient(135deg,#6a1b9a,#c62828)' },
+  { name:'Workout Mix',       desc:'Power & Energie für dein Training', query:'workout gym motivation official audio song',      emoji:'💪', color:'linear-gradient(135deg,#1b5e20,#f9a825)' },
+  { name:'Latin Vibes',       desc:'Reggaeton, Salsa & mehr',           query:'latin reggaeton official video song 2024',       emoji:'🎺', color:'linear-gradient(135deg,#e65100,#f9a825)' },
+  { name:'K-Pop Station',     desc:'Die besten K-Pop Hits',             query:'kpop official music video song 2024',            emoji:'⭐', color:'linear-gradient(135deg,#ad1457,#7b1fa2)' },
+  { name:'Metal Zone',        desc:'Heavy Metal & Hard Rock',           query:'heavy metal official music video song',          emoji:'🤘', color:'linear-gradient(135deg,#212121,#b71c1c)' },
+  { name:'Jazz Café',         desc:'Smooth Jazz zum Entspannen',        query:'jazz official audio song smooth',                emoji:'🎷', color:'linear-gradient(135deg,#4e342e,#bf360c)' },
+  { name:'Deutsche Hits',     desc:'Die besten deutschen Songs',        query:'deutsch offiziell audio song 2024',              emoji:'🇩🇪', color:'linear-gradient(135deg,#1565c0,#c62828)' },
+  { name:'90s Throwback',     desc:'Die besten Songs der 90er',         query:'90s official music video song classic',          emoji:'📼', color:'linear-gradient(135deg,#6a1b9a,#0288d1)' },
+  { name:'Sleep & Focus',     desc:'Ruhige Klänge zum Einschlafen',    query:'sleep ambient official audio calm song',          emoji:'🌙', color:'linear-gradient(135deg,#1a237e,#283593)' },
 ];
 
 // ── Boot ───────────────────────────────────────────────────────────────────
@@ -692,15 +692,22 @@ async function openGenre(name, query) {
   const list = document.getElementById('genre-track-list');
   if (!list) return;
   if (!res.ok || !res.results?.length) { list.innerHTML = '<p style="color:var(--muted);padding:20px">Keine Ergebnisse</p>'; return; }
-  // Filter out compilations/mixes — same logic as loadSection()
-  const blacklist = ['playlist', 'mix', 'compilation', 'top 10', 'top 20', 'best of', 'hour', 'hours', 'stunden', 'sammlung', 'megamix', 'nonstop'];
+  // Filter out compilations/mixes/playlists — only individual songs
+  const blacklist = ['playlist', 'mix', 'compilation', 'top 10', 'top 20', 'top 50', 'top 100',
+    'best of', 'greatest hits', 'hour', 'hours', 'stunden', 'sammlung', 'megamix',
+    'nonstop', 'collection', 'essentials', 'ultimate', 'vol.', 'part 1', 'part 2',
+    'episode', 'ep.', 'full album', 'album', 'songs you', 'hits of'];
   const filtered = res.results.filter(t => {
     const s = t.durationSec || 0;
     if (s < 60 || s > 420) return false;
     const tl = (t.title || '').toLowerCase();
     return !blacklist.some(w => tl.includes(w));
   });
-  window._genreTracks = (filtered.length ? filtered : res.results.filter(t => (t.durationSec||0) < 420)).slice(0, 20);
+  // Fallback: if nothing passes the strict filter, use only duration filter
+  window._genreTracks = (filtered.length >= 3 ? filtered : res.results.filter(t => {
+    const s = t.durationSec || 0;
+    return s >= 60 && s <= 420;
+  })).slice(0, 20);
   list.innerHTML = window._genreTracks.map((t,i) => trackRowHTML(t,i,window._genreTracks)).join('');
   bindTrackRows(view, window._genreTracks);
 }
@@ -759,14 +766,17 @@ async function startRadio(idx) {
   }
   _radioActive = { station, idx };
   // Filter out compilations/mixes — same logic as loadSection()
-  const _rbl = ['playlist', 'mix', 'compilation', 'top 10', 'top 20', 'best of', 'hour', 'hours', 'stunden', 'sammlung', 'megamix', 'nonstop'];
+  const _rbl = ['playlist', 'mix', 'compilation', 'top 10', 'top 20', 'top 50', 'top 100',
+    'best of', 'greatest hits', 'hour', 'hours', 'stunden', 'sammlung', 'megamix',
+    'nonstop', 'collection', 'essentials', 'ultimate', 'vol.', 'full album', 'album',
+    'songs you', 'hits of', 'episode'];
   const _rf = res.results.filter(t => {
     const s = t.durationSec || 0;
     if (s < 60 || s > 420) return false;
     const tl = (t.title || '').toLowerCase();
     return !_rbl.some(w => tl.includes(w));
   });
-  const tracks = (_rf.length ? _rf : res.results.filter(t => (t.durationSec||0) < 420)).slice(0, 20);
+  const tracks = (_rf.length >= 3 ? _rf : res.results.filter(t => { const s = t.durationSec||0; return s >= 60 && s <= 420; })).slice(0, 20);
   playTrack(tracks[0], tracks, 0);
   showNotif(`📻 ${station.name} — ${tracks.length} Songs geladen!`);
 }

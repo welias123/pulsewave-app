@@ -234,7 +234,7 @@ ipcMain.handle('search-music', (_, query) => new Promise(resolve => {
   if (cached && Date.now() - cached.ts < CACHE_TTL) { resolve({ ok: true, results: cached.results, cached: true }); return; }
 
   const safe = query.replace(/"/g, '');
-  exec(`"${bin}" "ytsearch20:${safe}" -j --flat-playlist --no-warnings`,
+  exec(`"${bin}" "ytsearch30:${safe}" -j --flat-playlist --no-warnings`,
     { maxBuffer: 20*1024*1024, timeout: 60000, windowsHide: true }, (err, out) => {
     if (err) { resolve({ ok: false, error: err.message }); return; }
     try {
