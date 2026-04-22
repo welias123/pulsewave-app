@@ -51,7 +51,8 @@
       ],
       "artifactName": "Pulsewave-Setup.exe",
       "signingHashAlgorithms": null,
-      "sign": null
+      "sign": null,
+      "forceCodeSigning": false
     },
     "mac": {
       "target": [{"target": "dmg", "arch": ["universal"]}],
