@@ -548,12 +548,19 @@ async function loadSection(query, gridId) {
   const grid = document.getElementById(gridId);
   if (!grid) return;
   if (!res.ok || !res.results?.length) { grid.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0">Keine Ergebnisse</p>'; return; }
-  // Filter out compilations/playlists (> 7 min) and very short items (< 30s)
+  // Nur Einzelsongs: 1:00–7:00 Min. Compilations/Playlists rausfiltern — KEIN Fallback auf ungefilterte Ergebnisse
   const tracks = res.results.filter(t => {
     const s = t.durationSec || 0;
-    return s >= 30 && s <= 480;
+    const titleLower = (t.title || '').toLowerCase();
+    // Dauer: zwischen 1 Min und 7 Min
+    if (s < 60 || s > 420) return false;
+    // Compilations/Playlists anhand Titel rauswerfen
+    const blacklist = ['playlist', 'mix', 'compilation', 'top 10', 'top 20', 'best of', 'hour', 'hours', 'stunden', 'sammlung', 'megamix', 'nonstop'];
+    if (blacklist.some(w => titleLower.includes(w))) return false;
+    return true;
   });
-  const list = tracks.length ? tracks : res.results.slice(0, 10);
+  // Wenn gar nichts bleibt: zeige die ersten 3 Ergebnisse ohne Dauer-Filter als Notfall
+  const list = tracks.length ? tracks : res.results.filter(t => t.durationSec < 420).slice(0, 3);
   grid.innerHTML = '';
   list.slice(0, 10).forEach((track, i) => grid.appendChild(makeCard(track, list, i)));
 }
