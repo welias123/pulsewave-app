@@ -99,6 +99,80 @@ let currentTrack = null;
 
 let eqValues = [0, 0, 0, 0, 0, 0, 0];
 
+// ── Pre-roll Ad System ────────────────────────────────────────────────────────
+let _songsPlayed = 0;
+const AD_EVERY   = 3;   // show ad every N songs
+const AD_SECS    = 15;  // duration in seconds
+
+const PREROLL_ADS = [
+  { title: '⭐ Pulsewave Premium',   body: 'Keine Werbung mehr, Sleep Timer, Crossfade & mehr — nur €2/Monat.' },
+  { title: '🎵 Musik ohne Pause',    body: 'Mit Premium hörst du jeden Song sofort. Kein Warten, kein Unterbrechen.' },
+  { title: '🎛️ Dein persönlicher EQ', body: 'Speichere deine perfekten Klangeinstellungen mit Premium.' },
+  { title: '⏰ Sleep Timer',          body: 'Einschlafen bei Musik? Der Sleep Timer ist ein Premium-Feature.' },
+];
+let _adRotateIdx = 0;
+
+function lockPlayerControls(lock) {
+  ['btn-play','btn-prev','btn-next','btn-shuffle','btn-repeat','btn-like'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.disabled = lock;
+    el.style.opacity = lock ? '0.25' : '';
+    el.style.pointerEvents = lock ? 'none' : '';
+  });
+  const bar = document.getElementById('progress-bar');
+  if (bar) bar.style.pointerEvents = lock ? 'none' : '';
+  // Block song card clicks
+  document.body.style.pointerEvents = lock ? '' : '';
+  if (lock) document.body.classList.add('ad-playing');
+  else      document.body.classList.remove('ad-playing');
+}
+
+function showPreRollAd() {
+  return new Promise(resolve => {
+    const ad = PREROLL_ADS[_adRotateIdx % PREROLL_ADS.length];
+    _adRotateIdx++;
+
+    lockPlayerControls(true);
+
+    const el = document.createElement('div');
+    el.id = 'preroll-overlay';
+    el.innerHTML = `
+      <div class="preroll-inner">
+        <div class="preroll-label">WERBUNG</div>
+        <div class="preroll-title">${ad.title}</div>
+        <div class="preroll-body">${ad.body}</div>
+        <button class="preroll-upgrade" onclick="openPremiumModal()">Jetzt upgraden →</button>
+        <div class="preroll-countdown">
+          Song startet in <span id="preroll-secs">${AD_SECS}</span>s
+          <div class="preroll-bar-wrap"><div class="preroll-bar" id="preroll-bar"></div></div>
+        </div>
+      </div>`;
+    document.body.appendChild(el);
+
+    let secs = AD_SECS;
+    const secsEl = document.getElementById('preroll-secs');
+    const barEl  = document.getElementById('preroll-bar');
+    barEl.style.width = '100%';
+
+    const tick = setInterval(() => {
+      secs--;
+      if (secsEl) secsEl.textContent = secs;
+      if (barEl)  barEl.style.width  = (secs / AD_SECS * 100) + '%';
+      if (secs <= 0) {
+        clearInterval(tick);
+        el.remove();
+        lockPlayerControls(false);
+        resolve();
+      }
+    }, 1000);
+  });
+}
+
+function shouldShowPreRoll() {
+  return !window._isPremium && _songsPlayed > 0 && _songsPlayed % AD_EVERY === 0;
+}
+
 function initPlayer() {
   audioEl = new Audio();
   audioEl.volume = 0.8;
@@ -115,11 +189,22 @@ function initPlayer() {
     setTimeout(nextTrack, 1500);
   });
 
-  // Progress bar drag
+  // Progress bar drag — pause during seek to avoid noise, resume on release
+  let _wasPlayingBeforeSeek = false;
   const bar = document.getElementById('progress-bar');
-  bar.addEventListener('mousedown', (e) => { isDragging = true; seekFromEvent(e); });
+  bar.addEventListener('mousedown', (e) => {
+    if (_adInProgress) return;
+    isDragging = true;
+    _wasPlayingBeforeSeek = !audioEl.paused;
+    if (_wasPlayingBeforeSeek) audioEl.pause();
+    seekFromEvent(e);
+  });
   document.addEventListener('mousemove', (e) => { if (isDragging) seekFromEvent(e); });
-  document.addEventListener('mouseup',   ()  => { isDragging = false; });
+  document.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    isDragging = false;
+    if (_wasPlayingBeforeSeek) AudioEngine.play().then(() => updatePlayBtn(true));
+  });
 }
 
 function seekFromEvent(e) {
@@ -149,6 +234,10 @@ function onEnded() {
 async function playTrack(track, queueList, startIdx) {
   if (queueList) { queue = [...queueList]; queueIdx = startIdx ?? 0; }
   currentTrack = track;
+
+  // Pre-roll ad every N songs (free users only)
+  _songsPlayed++;
+  if (shouldShowPreRoll()) await showPreRollAd();
 
   updatePlayerUI(track);
   document.getElementById('progress-fill').style.width = '0%';
@@ -266,8 +355,10 @@ function buildEQBands() {
     div.className = 'eq-band';
     div.innerHTML = `
       <span class="eq-val" id="eq-val-${i}">0 dB</span>
-      <input type="range" min="-12" max="12" value="0" step="0.5"
-        oninput="onEQChange(${i}, this.value)"/>
+      <div class="eq-band-slider-wrap">
+        <input type="range" min="-12" max="12" value="0" step="0.5"
+          oninput="onEQChange(${i}, this.value)"/>
+      </div>
       <label>${label}</label>`;
     container.appendChild(div);
   });

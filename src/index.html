@@ -230,14 +230,14 @@
       <button class="btn-icon" id="btn-shuffle" onclick="toggleShuffle()" title="Shuffle">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
       </button>
-      <button class="btn-icon" onclick="prevTrack()" title="Previous">
+      <button class="btn-icon" id="btn-prev" onclick="prevTrack()" title="Previous">
         <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"/></svg>
       </button>
       <button class="btn-play-main" id="btn-play" onclick="togglePlay()">
         <svg id="icon-play"  viewBox="0 0 24 24" fill="currentColor" width="24" height="24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
         <svg id="icon-pause" viewBox="0 0 24 24" fill="currentColor" width="24" height="24" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
       </button>
-      <button class="btn-icon" onclick="nextTrack()" title="Next">
+      <button class="btn-icon" id="btn-next" onclick="nextTrack()" title="Next">
         <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"/></svg>
       </button>
       <button class="btn-icon" id="btn-repeat" onclick="toggleRepeat()" title="Repeat">

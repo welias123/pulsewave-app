@@ -15,6 +15,7 @@ let _atpTrack      = null;
 
 function initPremium(isPremium) {
   _isPremium = isPremium;
+  window._isPremium = isPremium;
   const adBanner     = document.getElementById('ad-banner');
   const premBanner   = document.getElementById('premium-sidebar-banner');
   const premBadge    = document.getElementById('premium-badge-sidebar');
@@ -320,8 +321,10 @@ window.addEventListener('DOMContentLoaded', () => {
     _username  = data.username;
     window._userId    = _userId;
     window._authToken = data.token || null;
-    document.getElementById('user-name').textContent   = _username;
-    document.getElementById('user-avatar').textContent = _username[0].toUpperCase();
+    document.getElementById('user-name').textContent   = _username || 'User';
+    document.getElementById('user-avatar').textContent = (_username || 'U')[0].toUpperCase();
+    document.getElementById('user-avatar').style.background = 'var(--yellow)';
+    document.getElementById('user-avatar').style.color = '#000';
     // Init premium features
     initPremium(data.isPremium || false);
     await loadPlaylists();
