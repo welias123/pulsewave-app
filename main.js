@@ -51,6 +51,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  initLocalCodes();
   createWindow();
   // Check for updates 4 seconds after launch (silent, no blocking)
   setTimeout(() => { try { autoUpdater.checkForUpdates(); } catch {} }, 4000);
@@ -78,37 +79,83 @@ ipcMain.handle('auth-register', (_, { username, password }) => {
 
 // ── Premium code redemption ───────────────────────────────────────────────
 const { net } = require('electron');
+
+// Local code store (fallback when server unreachable)
+const LOCAL_CODES_FILE = path.join(USER_DATA, 'codes.json');
+// Codes that always work offline (owner / admin codes)
+const OFFLINE_CODES = ['PULSE-DEQY-GHMW-BKPT'];
+
+function loadLocalCodes() {
+  try { return JSON.parse(fs.readFileSync(LOCAL_CODES_FILE, 'utf8')); } catch { return []; }
+}
+function saveLocalCodes(codes) { fs.writeFileSync(LOCAL_CODES_FILE, JSON.stringify(codes, null, 2)); }
+function initLocalCodes() {
+  const existing = loadLocalCodes();
+  const existingCodes = existing.map(c => c.code);
+  let changed = false;
+  for (const code of OFFLINE_CODES) {
+    if (!existingCodes.includes(code)) {
+      existing.push({ code, used: false, note: 'admin', created_at: new Date().toISOString() });
+      changed = true;
+    }
+  }
+  if (changed) saveLocalCodes(existing);
+}
+
+function activatePremiumLocally(userId) {
+  const db = loadDB();
+  const user = db.users.find(u => u.id === userId);
+  if (user) { user.is_premium = true; saveDB(db); }
+}
+
 ipcMain.handle('redeem-code', async (_, { code, userId, username }) => {
+  const clean = (code || '').trim().toUpperCase();
+  if (!clean) return { ok: false, error: 'Kein Code eingegeben' };
+
+  // 1. Try server first (5s timeout)
   try {
     const backendUrl = 'https://pulsewave-welias.loca.lt';
     const req = net.request({
       method: 'POST', url: backendUrl + '/api/redeem-code-app',
       headers: { 'Content-Type': 'application/json', 'bypass-tunnel-reminder': 'true' }
     });
-    const result = await new Promise((resolve, reject) => {
-      let body = '';
-      req.on('response', r => {
-        r.on('data', d => body += d);
-        r.on('end', () => {
-          try {
-            const parsed = JSON.parse(body);
-            resolve({ status: r.statusCode, data: parsed });
-          } catch { reject(new Error('Invalid response')); }
+    const result = await Promise.race([
+      new Promise((resolve, reject) => {
+        let body = '';
+        req.on('response', r => {
+          r.on('data', d => body += d);
+          r.on('end', () => {
+            try { resolve({ status: r.statusCode, data: JSON.parse(body) }); }
+            catch { reject(new Error('bad_json')); }
+          });
         });
-      });
-      req.on('error', reject);
-      req.write(JSON.stringify({ code, username }));
-      req.end();
-    });
-    if (result.status !== 200) return { ok: false, error: result.data?.error || 'Ungültiger Code' };
-    // Activate locally
-    const db = loadDB();
-    const user = db.users.find(u => u.id === userId);
-    if (user) { user.is_premium = true; saveDB(db); }
-    return { ok: true, message: result.data.message || 'Premium aktiviert!' };
-  } catch (e) {
-    return { ok: false, error: 'Server nicht erreichbar: ' + e.message };
-  }
+        req.on('error', reject);
+        req.write(JSON.stringify({ code: clean, username }));
+        req.end();
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 5000))
+    ]);
+    if (result.status === 200) {
+      activatePremiumLocally(userId);
+      // Mark code used locally too
+      const lc = loadLocalCodes();
+      const lEntry = lc.find(c => c.code === clean);
+      if (lEntry) { lEntry.used = true; lEntry.usedBy = username; saveLocalCodes(lc); }
+      return { ok: true, message: '⭐ Premium aktiviert!' };
+    }
+    return { ok: false, error: result.data?.error || 'Ungültiger Code' };
+  } catch (_) { /* server unreachable — fall through to local validation */ }
+
+  // 2. Local fallback: check codes.json in userData
+  const lc = loadLocalCodes();
+  const entry = lc.find(c => c.code === clean);
+  if (!entry) return { ok: false, error: 'Ungültiger Code' };
+  if (entry.used) return { ok: false, error: 'Dieser Code wurde bereits verwendet' };
+  entry.used = true;
+  entry.usedBy = username;
+  saveLocalCodes(lc);
+  activatePremiumLocally(userId);
+  return { ok: true, message: '⭐ Premium aktiviert!' };
 });
 
 ipcMain.handle('auth-login', (_, { username, password }) => {

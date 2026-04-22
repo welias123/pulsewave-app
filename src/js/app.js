@@ -204,6 +204,33 @@ function showSleepNotif(msg) {
 
 const HOME_QUERIES = [
   // ── Charts & Trends ───────────────────────────────────────────────────────
+  // ── Phonk 👻 ─────────────────────────────────────────────────────────────
+  { label: '👻 Kordhell – Murder In My Mind',         query: 'kordhell murder in my mind official audio' },
+  { label: '👻 Ghostemane – Nihil',                   query: 'ghostemane nihil official audio' },
+  { label: '👻 Night Lovell – Dark Light',            query: 'night lovell dark light official audio' },
+  { label: '👻 Soudiere – Reaper',                    query: 'soudiere reaper phonk audio' },
+  { label: '👻 SHXDOW – Dangerous',                   query: 'shxdow dangerous phonk official' },
+  { label: '👻 Crystals – Phonk',                     query: 'crystals phonk official audio' },
+  { label: '👻 Floby – Phonk',                        query: 'floby phonk official audio' },
+  { label: '👻 Drugs & Carti – Phonk',                query: 'drugs and carti phonk official audio' },
+  { label: '👻 INTERWORLD – Metamorphosis',           query: 'interworld metamorphosis phonk official' },
+  { label: '👻 Phonk La – Rave',                      query: 'phonk la rave official audio' },
+  { label: '👻 Dxrk ダーク – Intro',                  query: 'dxrk intro phonk official audio' },
+  { label: '👻 MOREART – Reel It In Phonk',           query: 'moreart reel it in phonk official' },
+  { label: '👻 Avemoves – Void',                      query: 'avemoves void phonk official audio' },
+  { label: '👻 Phonk – MemphisStyles',                query: 'memphis styles phonk official audio' },
+
+  // ── Brazilian Phonk / Funk 🇧🇷 ─────────────────────────────────────────
+  { label: '🇧🇷 MC Ryan SP – Tá OK',                  query: 'mc ryan sp ta ok official audio' },
+  { label: '🇧🇷 MC Cabelinho – Tá Tranquilo',         query: 'mc cabelinho ta tranquilo official audio' },
+  { label: '🇧🇷 MC Poze – Calmaria',                  query: 'mc poze calmaria official audio' },
+  { label: '🇧🇷 Borges – Por Você',                   query: 'borges por voce official audio' },
+  { label: '🇧🇷 MC Kevin o Chris – Gaiola',           query: 'mc kevin o chris gaiola aberta official' },
+  { label: '🇧🇷 WIU – Freestyle',                     query: 'wiu freestyle funk official audio' },
+  { label: '🇧🇷 Xamã – Solto',                        query: 'xama solto official audio' },
+  { label: '🇧🇷 Matuê – 777',                         query: 'matue 777 official audio' },
+  { label: '🇧🇷 Don L – Teto de Vidro',               query: 'don l teto de vidro official audio' },
+
   // ── Aktuell 🔥 ───────────────────────────────────────────────────────────
   { label: '🔥 Sabrina Carpenter – Espresso',         query: 'sabrina carpenter espresso official audio' },
   { label: '🔥 Kendrick Lamar – Not Like Us',         query: 'kendrick lamar not like us official audio' },
@@ -503,8 +530,14 @@ async function loadSection(query, gridId) {
   const grid = document.getElementById(gridId);
   if (!grid) return;
   if (!res.ok || !res.results?.length) { grid.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:8px 0">Keine Ergebnisse</p>'; return; }
+  // Filter out compilations/playlists (> 7 min) and very short items (< 30s)
+  const tracks = res.results.filter(t => {
+    const s = t.durationSec || 0;
+    return s >= 30 && s <= 480;
+  });
+  const list = tracks.length ? tracks : res.results.slice(0, 10);
   grid.innerHTML = '';
-  res.results.slice(0,10).forEach((track,i) => grid.appendChild(makeCard(track, res.results, i)));
+  list.slice(0, 10).forEach((track, i) => grid.appendChild(makeCard(track, list, i)));
 }
 
 // ── Browse ────────────────────────────────────────────────────────────────────
