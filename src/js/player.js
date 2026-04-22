@@ -1,7 +1,7 @@
 // ── Pulsewave Audio Engine + Equalizer ──────────────────────────────────────
 
 const AudioEngine = (() => {
-  let ctx, source, gainNode, analyser, compressor;
+  let ctx, source, gainNode, analyser, compressor, airFilter, warmthFilter;
   let audioEl = null;
   let eqFilters = [];
   let normEnabled = true; // Lautstärke-Normalisierung (Sound Check)
@@ -42,7 +42,20 @@ const AudioEngine = (() => {
     compressor.attack.value     = 0.003;
     compressor.release.value    = 0.25;
 
-    // Build EQ chain
+    // ── Mastering filters (fixed, always on) ─────────────────────────────────
+    // "Air" shelf: +2 dB at 12 kHz — adds sparkle & presence like Apple Music
+    airFilter = ctx.createBiquadFilter();
+    airFilter.type            = 'highshelf';
+    airFilter.frequency.value = 12000;
+    airFilter.gain.value      = 2.0;
+
+    // "Warmth" shelf: +1.5 dB at 80 Hz — adds body & richness
+    warmthFilter = ctx.createBiquadFilter();
+    warmthFilter.type            = 'lowshelf';
+    warmthFilter.frequency.value = 80;
+    warmthFilter.gain.value      = 1.5;
+
+    // Build user EQ chain
     eqFilters = BANDS.map(([freq, type]) => {
       const f = ctx.createBiquadFilter();
       f.type      = type;
@@ -52,8 +65,10 @@ const AudioEngine = (() => {
       return f;
     });
 
-    // Connect: source → eq[0..n] → gain → compressor → analyser → dest
-    let prev = source;
+    // Connect: source → warmth → air → eq[0..n] → gain → compressor → analyser → dest
+    source.connect(warmthFilter);
+    warmthFilter.connect(airFilter);
+    let prev = airFilter;
     for (const f of eqFilters) { prev.connect(f); prev = f; }
     prev.connect(gainNode);
     gainNode.connect(compressor);
@@ -97,14 +112,21 @@ const AudioEngine = (() => {
       normEnabled = enabled;
       if (!compressor) return;
       if (enabled) {
-        // Reconnect with compressor
         gainNode.disconnect();
         gainNode.connect(compressor);
       } else {
-        // Bypass compressor — connect gain directly to analyser
+        // Bypass compressor
         gainNode.disconnect();
         gainNode.connect(analyser);
       }
+    },
+
+    setAirFilter(db) {
+      if (airFilter) airFilter.gain.value = db;
+    },
+
+    setWarmthFilter(db) {
+      if (warmthFilter) warmthFilter.gain.value = db;
     },
 
     isNormalizationEnabled() { return normEnabled; },

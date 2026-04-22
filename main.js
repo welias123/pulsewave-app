@@ -254,7 +254,8 @@ ipcMain.handle('search-music', (_, query) => new Promise(resolve => {
 ipcMain.handle('get-stream-url', (_, videoId) => new Promise(resolve => {
   const bin = ytdlp();
   if (!fs.existsSync(bin)) { resolve({ ok: false, error: 'yt-dlp not found' }); return; }
-  exec(`"${bin}" -f bestaudio -g "https://www.youtube.com/watch?v=${videoId}" --no-warnings`, { maxBuffer: 1024*1024, windowsHide: true }, (err, out) => {
+  // Prefer Opus 160kbps (best quality YouTube offers) → fallback to any bestaudio
+  exec(`"${bin}" -f "bestaudio[acodec=opus]/bestaudio[acodec=m4a]/bestaudio" -g "https://www.youtube.com/watch?v=${videoId}" --no-warnings`, { maxBuffer: 1024*1024, windowsHide: true }, (err, out) => {
     if (err) { resolve({ ok: false, error: err.message }); return; }
     resolve({ ok: true, url: out.trim().split('\n')[0] });
   });
