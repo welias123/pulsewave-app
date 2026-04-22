@@ -123,6 +123,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 .btn-icon.active{color:var(--yellow)}
 .btn-play-main{width:40px;height:40px;background:var(--yellow);border:none;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#000;transition:.2s;flex-shrink:0}
 .btn-play-main:hover{background:#FFE033;transform:scale(1.06)}
+.btn-play-main.buffering{animation:bufferPulse .8s ease-in-out infinite}
+@keyframes bufferPulse{0%,100%{opacity:1}50%{opacity:.4}}
 .progress-area{display:flex;align-items:center;gap:10px;width:100%;max-width:500px}
 .time{font-size:11px;color:var(--muted);width:32px;flex-shrink:0;font-variant-numeric:tabular-nums}
 .time:last-child{text-align:right}

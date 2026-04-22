@@ -496,10 +496,11 @@ async function loadHome() {
     view.appendChild(sec);
   }
 
-  // ── Scroll-based lazy loading (no IntersectionObserver — timing issues in packaged app)
-  // Max 2 concurrent yt-dlp calls so search/radio stay responsive.
+  // ── Lazy loading: max 2 concurrent yt-dlp calls
   let _activeLoads = 0;
   const _loadQueue = [];
+  const _allSections = [...view.querySelectorAll('.home-section')];
+  let _nextIdx = 0; // index into _allSections for scroll-based loading
 
   function drainQueue() {
     while (_activeLoads < 2 && _loadQueue.length) {
@@ -509,25 +510,37 @@ async function loadHome() {
     }
   }
 
-  function queueVisible() {
-    const viewTop    = view.scrollTop;
-    const viewBottom = viewTop + view.clientHeight + 500; // 500px lookahead
-    view.querySelectorAll('.home-section').forEach(sec => {
-      if (sec.dataset.loaded) return;
-      // offsetTop is relative to the scroll container (view)
-      if (sec.offsetTop < viewBottom) {
-        sec.dataset.loaded = '1';
-        _loadQueue.push({ query: sec.dataset.query, gridId: sec.dataset.gridId });
-      }
-    });
-    drainQueue();
+  function enqueue(sec) {
+    if (sec.dataset.loaded) return;
+    sec.dataset.loaded = '1';
+    _loadQueue.push({ query: sec.dataset.query, gridId: sec.dataset.gridId });
   }
 
-  // Trigger on scroll
-  view.addEventListener('scroll', queueVisible, { passive: true });
+  // Load first 4 sections immediately — no geometry checks needed
+  for (let i = 0; i < Math.min(4, _allSections.length); i++) {
+    enqueue(_allSections[i]);
+    _nextIdx = i + 1;
+  }
+  drainQueue();
 
-  // Trigger immediately (after one frame so offsetTop is computed)
-  requestAnimationFrame(() => { requestAnimationFrame(queueVisible); });
+  // Load more as user scrolls
+  view.addEventListener('scroll', () => {
+    const threshold = view.scrollTop + view.clientHeight + 600;
+    while (_nextIdx < _allSections.length) {
+      const sec = _allSections[_nextIdx];
+      // sec.offsetTop is relative to nearest positioned ancestor;
+      // use getBoundingClientRect for reliable position
+      const rect = sec.getBoundingClientRect();
+      const viewRect = view.getBoundingClientRect();
+      if (rect.top - viewRect.top < view.clientHeight + 600) {
+        enqueue(sec);
+        _nextIdx++;
+        drainQueue();
+      } else {
+        break;
+      }
+    }
+  }, { passive: true });
 }
 
 async function loadSection(query, gridId) {

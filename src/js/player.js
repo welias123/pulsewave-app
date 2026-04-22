@@ -209,6 +209,16 @@ function initPlayer() {
     showNotif('Stream error — trying next track…');
     setTimeout(nextTrack, 1500);
   });
+  // Show buffering state while seeking
+  audioEl.addEventListener('waiting', () => {
+    document.getElementById('btn-play')?.classList.add('buffering');
+  });
+  audioEl.addEventListener('playing', () => {
+    document.getElementById('btn-play')?.classList.remove('buffering');
+  });
+  audioEl.addEventListener('canplay', () => {
+    document.getElementById('btn-play')?.classList.remove('buffering');
+  });
 
   // Progress bar drag — mute during drag (no noise), unmute instantly on release
   const bar = document.getElementById('progress-bar');
