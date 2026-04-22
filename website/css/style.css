@@ -416,6 +416,27 @@ body {
 }
 .dl-ver { font-size: 12px; color: var(--muted2); text-align: center; }
 
+/* ── iOS download card ── */
+.dl-card-ios { border-color: rgba(255,214,0,0.2); }
+.dl-ios-steps { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 8px; }
+.dl-ios-step {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 13px; color: var(--muted); line-height: 1.5;
+}
+.dl-ios-num {
+  min-width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(255,214,0,0.15); color: var(--yellow);
+  font-size: 11px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+.dl-ios-step code {
+  background: rgba(255,255,255,0.06); border-radius: 4px;
+  padding: 1px 5px; font-family: monospace; font-size: 12px;
+  color: var(--text);
+}
+.dl-ios-step strong { color: var(--text); }
+
 /* ── Setup steps ── */
 .setup-steps {
   background: var(--card2); border: 1px solid var(--border);

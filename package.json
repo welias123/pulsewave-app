@@ -6,12 +6,14 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "web": "node server.js",
     "setup": "node setup.js",
     "build:win": "electron-builder --win --x64",
     "build:linux": "electron-builder --linux --x64"
   },
   "dependencies": {
-    "electron-updater": "^6.1.7"
+    "electron-updater": "^6.1.7",
+    "express": "^4.19.2"
   },
   "devDependencies": {
     "electron": "^29.1.4",
