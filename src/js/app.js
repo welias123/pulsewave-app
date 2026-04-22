@@ -16,32 +16,110 @@ let _atpTrack      = null;
 function initPremium(isPremium) {
   _isPremium = isPremium;
   window._isPremium = isPremium;
-  const adBanner     = document.getElementById('ad-banner');
-  const premBanner   = document.getElementById('premium-sidebar-banner');
-  const premBadge    = document.getElementById('premium-badge-sidebar');
-  const sleepBtn     = document.getElementById('btn-sleep');
+  const adBanner       = document.getElementById('ad-banner');
+  const premBanner     = document.getElementById('premium-sidebar-banner');
+  const premBadge      = document.getElementById('premium-badge-sidebar');
+  const sleepBtn       = document.getElementById('btn-sleep');
+  const crossfadeBtn   = document.getElementById('btn-crossfade');
+  const eqCustomRow    = document.getElementById('eq-custom-row');
+  const eqPremHint     = document.getElementById('eq-premium-hint');
 
   if (isPremium) {
     // Hide ads, show premium indicators
-    if (adBanner)   adBanner.style.display   = 'none';
-    if (premBanner) premBanner.style.display  = 'none';
-    if (premBadge)  premBadge.style.display   = 'block';
-    if (sleepBtn)   sleepBtn.style.display    = 'flex';
+    if (adBanner)     adBanner.style.display     = 'none';
+    if (premBanner)   premBanner.style.display   = 'none';
+    if (premBadge)    premBadge.style.display    = 'block';
+    if (sleepBtn)     sleepBtn.style.display     = 'flex';
+    if (crossfadeBtn) crossfadeBtn.style.display = 'flex';
+    if (eqCustomRow)  eqCustomRow.style.display  = 'flex';
+    if (eqPremHint)   eqPremHint.style.display   = 'none';
     // Apply premium Gold theme
     document.body.classList.add('premium-theme');
     // Adjust layout: no ad banner means player sits at bottom directly
     document.documentElement.style.setProperty('--ad-h', '0px');
+    // Load saved custom EQ presets
+    renderCustomPresets();
   } else {
     // Show ads and upgrade prompts
-    if (adBanner)   adBanner.style.display   = 'block';
-    if (premBanner) premBanner.style.display  = 'block';
-    if (premBadge)  premBadge.style.display   = 'none';
-    if (sleepBtn)   sleepBtn.style.display    = 'none';
+    if (adBanner)     adBanner.style.display     = 'block';
+    if (premBanner)   premBanner.style.display   = 'block';
+    if (premBadge)    premBadge.style.display    = 'none';
+    if (sleepBtn)     sleepBtn.style.display     = 'none';
+    if (crossfadeBtn) crossfadeBtn.style.display = 'none';
+    if (eqCustomRow)  eqCustomRow.style.display  = 'none';
+    if (eqPremHint)   eqPremHint.style.display   = 'block';
     document.body.classList.remove('premium-theme');
     // Show first ad immediately, then rotate every 5 minutes
     showNextAd();
     setInterval(showNextAd, 5 * 60 * 1000);
   }
+}
+
+// ── Crossfade Toggle ──────────────────────────────────────────────────────────
+function toggleCrossfade() {
+  if (!_isPremium) { openPremiumModal(); return; }
+  const btn = document.getElementById('btn-crossfade');
+  const enabled = btn.classList.toggle('active');
+  if (typeof setCrossfade === 'function') setCrossfade(enabled);
+  showNotif(enabled ? '🔀 Crossfade aktiviert (4 Sek.)' : '🔀 Crossfade deaktiviert');
+}
+
+// ── Custom EQ Presets (Premium) ───────────────────────────────────────────────
+const EQ_PRESETS_KEY = 'pw_custom_eq_presets';
+
+function loadCustomPresets() {
+  try { return JSON.parse(localStorage.getItem(EQ_PRESETS_KEY)) || []; } catch { return []; }
+}
+function saveCustomPresetList(list) {
+  localStorage.setItem(EQ_PRESETS_KEY, JSON.stringify(list));
+}
+
+function saveCustomPreset() {
+  if (!_isPremium) { openPremiumModal(); return; }
+  const list = loadCustomPresets();
+  if (list.length >= 5) { showNotif('Maximal 5 eigene Presets erlaubt'); return; }
+  const name = prompt('Name für dein Preset:', 'Mein Preset ' + (list.length + 1));
+  if (!name) return;
+  const vals = [...eqValues];
+  list.push({ name, vals });
+  saveCustomPresetList(list);
+  renderCustomPresets();
+  showNotif(`✅ Preset "${name}" gespeichert`);
+}
+
+function renderCustomPresets() {
+  const container = document.getElementById('eq-custom-presets');
+  if (!container) return;
+  const list = loadCustomPresets();
+  container.innerHTML = list.map((p, i) => `
+    <div class="eq-custom-chip">
+      <button onclick="applyCustomPreset(${i})" title="${p.name}">${p.name}</button>
+      <span onclick="deleteCustomPreset(${i})" class="eq-chip-del">✕</span>
+    </div>`).join('');
+}
+
+function applyCustomPreset(i) {
+  const list = loadCustomPresets();
+  if (!list[i]) return;
+  const vals = list[i].vals;
+  eqValues = [...vals];
+  const bands = document.querySelectorAll('#eq-bands input[type=range]');
+  bands.forEach((inp, j) => {
+    inp.value = vals[j] ?? 0;
+    const display = document.getElementById(`eq-val-${j}`);
+    if (display) display.textContent = (vals[j] >= 0 ? '+' : '') + (vals[j]||0).toFixed(1) + ' dB';
+    if (typeof AudioEngine !== 'undefined') AudioEngine.setEQBand(j, vals[j] ?? 0);
+  });
+  showNotif(`🎛️ "${list[i].name}" geladen`);
+}
+
+function deleteCustomPreset(i) {
+  const list = loadCustomPresets();
+  const name = list[i]?.name || '';
+  list.splice(i, 1);
+  saveCustomPresetList(list);
+  renderCustomPresets();
+  showNotif(`🗑️ "${name}" gelöscht`);
 }
 
 const ADS = [
@@ -613,7 +691,15 @@ async function openGenre(name, query) {
   const list = document.getElementById('genre-track-list');
   if (!list) return;
   if (!res.ok || !res.results?.length) { list.innerHTML = '<p style="color:var(--muted);padding:20px">Keine Ergebnisse</p>'; return; }
-  window._genreTracks = res.results.slice(0, 20);
+  // Filter out compilations/mixes — same logic as loadSection()
+  const blacklist = ['playlist', 'mix', 'compilation', 'top 10', 'top 20', 'best of', 'hour', 'hours', 'stunden', 'sammlung', 'megamix', 'nonstop'];
+  const filtered = res.results.filter(t => {
+    const s = t.durationSec || 0;
+    if (s < 60 || s > 420) return false;
+    const tl = (t.title || '').toLowerCase();
+    return !blacklist.some(w => tl.includes(w));
+  });
+  window._genreTracks = (filtered.length ? filtered : res.results.filter(t => (t.durationSec||0) < 420)).slice(0, 20);
   list.innerHTML = window._genreTracks.map((t,i) => trackRowHTML(t,i,window._genreTracks)).join('');
   bindTrackRows(view, window._genreTracks);
 }
@@ -671,7 +757,15 @@ async function startRadio(idx) {
     return;
   }
   _radioActive = { station, idx };
-  const tracks = res.results.slice(0, 20);
+  // Filter out compilations/mixes — same logic as loadSection()
+  const _rbl = ['playlist', 'mix', 'compilation', 'top 10', 'top 20', 'best of', 'hour', 'hours', 'stunden', 'sammlung', 'megamix', 'nonstop'];
+  const _rf = res.results.filter(t => {
+    const s = t.durationSec || 0;
+    if (s < 60 || s > 420) return false;
+    const tl = (t.title || '').toLowerCase();
+    return !_rbl.some(w => tl.includes(w));
+  });
+  const tracks = (_rf.length ? _rf : res.results.filter(t => (t.durationSec||0) < 420)).slice(0, 20);
   playTrack(tracks[0], tracks, 0);
   showNotif(`📻 ${station.name} — ${tracks.length} Songs geladen!`);
 }

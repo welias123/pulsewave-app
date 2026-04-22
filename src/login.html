@@ -121,7 +121,7 @@
       btn.disabled = false;
       if (r.ok) {
         saveSession({ userId: r.userId, username: r.username });
-        pw.goToApp({ userId: r.userId, username: r.username });
+        pw.goToApp({ userId: r.userId, username: r.username, isPremiumLocal: r.isPremiumLocal || false });
       } else {
         err.textContent = r.error;
       }

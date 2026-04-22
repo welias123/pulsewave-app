@@ -58,6 +58,14 @@
     <button class="eq-close" onclick="toggleEQ()">✕</button>
   </div>
   <div class="eq-bands" id="eq-bands"></div>
+  <!-- Custom preset row (Premium) -->
+  <div id="eq-custom-row" class="eq-custom-row" style="display:none">
+    <div id="eq-custom-presets" class="eq-custom-presets"></div>
+    <button class="eq-save-btn" onclick="saveCustomPreset()">＋ Speichern</button>
+  </div>
+  <div id="eq-premium-hint" class="eq-premium-hint" style="display:none">
+    <span>⭐ <a href="#" onclick="openPremiumModal();return false">Premium</a> — speichere bis zu 5 eigene Presets</span>
+  </div>
 </div>
 
 <div class="layout">
@@ -256,6 +264,9 @@
 
   <!-- Right controls -->
   <div class="player-right">
+    <button class="btn-icon" id="btn-crossfade" onclick="toggleCrossfade()" title="Crossfade (Premium)" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 014-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 01-4 4H3"/></svg>
+    </button>
     <button class="btn-icon" id="btn-sleep" onclick="openSleepTimer()" title="Sleep Timer (Premium)" style="display:none">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
     </button>

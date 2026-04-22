@@ -99,6 +99,94 @@ let currentTrack = null;
 
 let eqValues = [0, 0, 0, 0, 0, 0, 0];
 
+// ── Crossfade ─────────────────────────────────────────────────────────────────
+let _crossfadeSec  = 4;     // crossfade duration in seconds
+let _crossfadeAudio = null; // second audio element used during crossfade
+let _crossfadeTimer = null; // timeout that starts the crossfade
+let _crossfadeActive = false;
+
+function setCrossfade(enabled) {
+  _crossfadeActive = enabled;
+  if (!enabled && _crossfadeTimer) { clearTimeout(_crossfadeTimer); _crossfadeTimer = null; }
+}
+
+function scheduleCrossfade() {
+  if (_crossfadeTimer) { clearTimeout(_crossfadeTimer); _crossfadeTimer = null; }
+  if (!_crossfadeActive || !window._isPremium) return;
+  if (!audioEl || !audioEl.duration) return;
+  const remaining = audioEl.duration - audioEl.currentTime;
+  if (remaining <= 0) return;
+  const delay = Math.max(0, (remaining - _crossfadeSec) * 1000);
+  _crossfadeTimer = setTimeout(doCrossfade, delay);
+}
+
+async function doCrossfade() {
+  if (!_crossfadeActive || !window._isPremium) return;
+  if (!queue.length) return;
+
+  // Determine next track
+  let nextIdx = isShuffle ? Math.floor(Math.random() * queue.length) : (queueIdx + 1) % queue.length;
+  if (repeatMode === 0 && nextIdx === 0 && !isShuffle) return; // at end, no repeat
+  const nextTrackObj = queue[nextIdx];
+  if (!nextTrackObj) return;
+
+  // Get stream URL for next track
+  const res = await pw.getStreamUrl(nextTrackObj.videoId);
+  if (!res.ok) return;
+
+  // Fade out current audio
+  const startVol = audioEl.volume;
+  const steps = 20;
+  const stepTime = (_crossfadeSec * 1000) / steps;
+  let step = 0;
+  const fadeOut = setInterval(() => {
+    step++;
+    audioEl.volume = Math.max(0, startVol * (1 - step / steps));
+    if (step >= steps) { clearInterval(fadeOut); audioEl.pause(); audioEl.volume = startVol; }
+  }, stepTime);
+
+  // Create & fade in new audio element
+  const nextAudio = new Audio();
+  nextAudio.src = res.url;
+  nextAudio.volume = 0;
+  nextAudio.crossOrigin = 'anonymous';
+  nextAudio.play().catch(() => {});
+
+  let stepIn = 0;
+  const fadeIn = setInterval(() => {
+    stepIn++;
+    nextAudio.volume = Math.min(startVol, startVol * (stepIn / steps));
+    if (stepIn >= steps) { clearInterval(fadeIn); }
+  }, stepTime);
+
+  // After crossfade: swap the audio elements
+  setTimeout(() => {
+    // Swap state
+    audioEl.pause();
+    audioEl.src = '';
+    audioEl = nextAudio;
+    AudioEngine.init(audioEl); // re-bind engine
+    queueIdx = nextIdx;
+    currentTrack = nextTrackObj;
+    updatePlayerUI(nextTrackObj);
+    updatePlayBtn(true);
+    audioEl.addEventListener('timeupdate', onTimeUpdate);
+    audioEl.addEventListener('ended', onEnded);
+    audioEl.addEventListener('loadedmetadata', () => {
+      document.getElementById('time-total').textContent = fmtTime(audioEl.duration);
+    });
+    // Save history
+    if (window._userId) pw.addToHistory({ userId: window._userId, track: nextTrackObj });
+    // Schedule next crossfade once metadata loaded
+    audioEl.addEventListener('loadedmetadata', scheduleCrossfade, { once: true });
+    // Update like button
+    if (window._userId) pw.isLiked({ userId: window._userId, videoId: nextTrackObj.videoId }).then(liked => setLikeBtnState(liked));
+    // Highlight row
+    document.querySelectorAll('.track-row').forEach(r => r.classList.remove('playing'));
+    document.querySelectorAll(`.track-row[data-vid="${nextTrackObj.videoId}"]`).forEach(r => r.classList.add('playing'));
+  }, _crossfadeSec * 1000);
+}
+
 // ── Pre-roll Ad System ────────────────────────────────────────────────────────
 let _songsPlayed = 0;
 const AD_EVERY   = 5;       // fallback: every N songs (unused now)
@@ -285,6 +373,8 @@ async function playTrack(track, queueList, startIdx) {
     audioEl.src = res.url;
     await AudioEngine.play();
     updatePlayBtn(true);
+    // Schedule crossfade for next track (premium only)
+    audioEl.addEventListener('loadedmetadata', scheduleCrossfade, { once: true });
     // Save to history
     if (window._userId) pw.addToHistory({ userId: window._userId, track });
     // Update like btn

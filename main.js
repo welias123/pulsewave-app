@@ -85,6 +85,15 @@ const LOCAL_CODES_FILE = path.join(USER_DATA, 'codes.json');
 // Codes that always work offline (owner / admin codes)
 const OFFLINE_CODES = ['PULSE-DEQY-GHMW-BKPT', 'PULSE-RVSD-X9K2-PREM'];
 
+// ── Always-Premium whitelist ──────────────────────────────────────────────────
+// These usernames ALWAYS have premium on every device, regardless of server.
+// Add the owner's and friend's usernames here.
+const ALWAYS_PREMIUM_USERS = [
+  'elias2983', 'elei234', 'elei', 'elias24324', // owner accounts
+  // Add friend's username here:
+  // 'friendusername',
+];
+
 function loadLocalCodes() {
   try { return JSON.parse(fs.readFileSync(LOCAL_CODES_FILE, 'utf8')); } catch { return []; }
 }
@@ -161,15 +170,32 @@ ipcMain.handle('redeem-code', async (_, { code, userId, username }) => {
 ipcMain.handle('auth-login', (_, { username, password }) => {
   const db = loadDB();
   const user = db.users.find(u => u.username === username && u.password === password);
-  return user ? { ok: true, userId: user.id, username: user.username } : { ok: false, error: 'Invalid credentials' };
+  if (!user) return { ok: false, error: 'Invalid credentials' };
+  // Always-premium whitelist check
+  const alwaysPremium = ALWAYS_PREMIUM_USERS.includes(username);
+  if (alwaysPremium && !user.is_premium) {
+    user.is_premium = true;
+    saveDB(db);
+  }
+  return { ok: true, userId: user.id, username: user.username, isPremiumLocal: user.is_premium || false };
 });
 
 // ── Navigation ────────────────────────────────────────────────────────────
 ipcMain.on('go-to-app', (_, userData) => {
   mainWindow.loadFile(path.join(__dirname, 'src', 'index.html'));
   mainWindow.webContents.once('did-finish-load', async () => {
-    // Check premium status from backend (non-blocking)
-    let isPremium = false;
+    // Always-premium whitelist — these users get premium no matter what
+    if (ALWAYS_PREMIUM_USERS.includes(userData.username)) {
+      mainWindow.webContents.send('user-data', { ...userData, isPremium: true });
+      return;
+    }
+
+    // Check premium: first use local db.json (reliable), then try server for sync
+    const db = loadDB();
+    const localUser = db.users.find(u => u.id === userData.userId);
+    let isPremium = localUser?.is_premium || userData.isPremiumLocal || false;
+
+    // Try server to get up-to-date premium status (optional sync, 3s timeout)
     try {
       const token = userData.token;
       if (token) {
@@ -183,9 +209,13 @@ ipcMain.on('go-to-app', (_, userData) => {
           }),
           new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
         ]);
-        isPremium = data?.user?.is_premium || false;
+        if (data?.user?.is_premium !== undefined) {
+          isPremium = data.user.is_premium;
+          // Sync to local db
+          if (localUser) { localUser.is_premium = isPremium; saveDB(db); }
+        }
       }
-    } catch { /* backend unreachable, default to free */ }
+    } catch { /* backend unreachable — use local value */ }
     mainWindow.webContents.send('user-data', { ...userData, isPremium });
   });
 });

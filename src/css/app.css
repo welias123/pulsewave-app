@@ -278,8 +278,25 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:-apple-
 .sleep-btn:hover{border-color:var(--yellow);color:var(--yellow)}
 .sleep-btn.active{background:rgba(255,214,0,.15);border-color:var(--yellow);color:var(--yellow)}
 
+/* EQ Custom Presets row (Premium) */
+.eq-custom-row{display:flex;align-items:center;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border2);flex-wrap:wrap}
+.eq-custom-presets{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+.eq-custom-chip{display:flex;align-items:center;background:rgba(255,214,0,.1);border:1px solid rgba(255,214,0,.25);border-radius:20px;overflow:hidden}
+.eq-custom-chip button{background:none;border:none;color:var(--yellow);padding:4px 10px;font-size:11px;cursor:pointer;transition:.15s}
+.eq-custom-chip button:hover{color:#fff}
+.eq-chip-del{color:#555;padding:4px 8px 4px 0;cursor:pointer;font-size:10px;transition:.15s}
+.eq-chip-del:hover{color:#ef4444}
+.eq-save-btn{background:rgba(255,214,0,.12);border:1px solid rgba(255,214,0,.3);color:var(--yellow);padding:4px 12px;border-radius:20px;font-size:11px;cursor:pointer;transition:.15s;white-space:nowrap}
+.eq-save-btn:hover{background:rgba(255,214,0,.22)}
+.eq-premium-hint{margin-top:10px;padding-top:10px;border-top:1px solid var(--border2);font-size:11px;color:var(--muted);text-align:center}
+.eq-premium-hint a{color:var(--yellow);text-decoration:none}
+
 /* Premium Gold Theme */
-body.premium-theme{--bg:#070600;--bg2:#0d0c00;--sidebar:#090800}
+body.premium-theme{--bg:#070600;--bg2:#0d0c00;--sidebar:#090800;--border:rgba(255,214,0,.08);--border2:rgba(255,214,0,.12)}
+body.premium-theme .player-bar{border-top:1px solid rgba(255,214,0,.12);background:rgba(7,6,0,.97)}
+body.premium-theme .sidebar{border-right:1px solid rgba(255,214,0,.06)}
+body.premium-theme .progress-fill{background:linear-gradient(90deg,#FFD600,#FF9900)}
+body.premium-theme .progress-thumb{background:#FFD600;box-shadow:0 0 6px rgba(255,214,0,.6)}
 
 /* ── Home Hero ── */
 .home-hero{
