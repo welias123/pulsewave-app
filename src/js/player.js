@@ -101,8 +101,12 @@ let eqValues = [0, 0, 0, 0, 0, 0, 0];
 
 // ── Pre-roll Ad System ────────────────────────────────────────────────────────
 let _songsPlayed = 0;
-const AD_EVERY   = 5;   // show ad every N songs
-const AD_SECS    = 15;  // duration in seconds
+const AD_EVERY   = 5;       // fallback: every N songs (unused now)
+const AD_SECS    = 30;      // ad duration in seconds
+const AD_INTERVAL_MS = 14 * 60 * 1000; // show ad every 14 minutes of listening
+let _listenMs    = 0;       // total milliseconds listened
+let _lastAdAt    = 0;       // _listenMs value when last ad was shown
+let _listenTick  = null;    // interval that counts listening time
 
 const PREROLL_ADS = [
   { title: '⭐ Pulsewave Premium',   body: 'Keine Werbung mehr, Sleep Timer, Crossfade & mehr — nur €2/Monat.' },
@@ -169,6 +173,7 @@ function showPreRollAd() {
         clearInterval(tick);
         el.remove();
         lockPlayerControls(false);
+        _lastAdAt = _listenMs; // reset timer after ad
         resolve();
       }
     }, 1000);
@@ -176,7 +181,17 @@ function showPreRollAd() {
 }
 
 function shouldShowPreRoll() {
-  return !window._isPremium && _songsPlayed > 0 && _songsPlayed % AD_EVERY === 0;
+  if (window._isPremium) return false;
+  return (_listenMs - _lastAdAt) >= AD_INTERVAL_MS;
+}
+
+function startListenTimer() {
+  if (_listenTick) return;
+  _listenTick = setInterval(() => {
+    if (audioEl && !audioEl.paused && !_adInProgress) {
+      _listenMs += 1000;
+    }
+  }, 1000);
 }
 
 function initPlayer() {
@@ -239,8 +254,9 @@ async function playTrack(track, queueList, startIdx) {
   if (queueList) { queue = [...queueList]; queueIdx = startIdx ?? 0; }
   currentTrack = track;
 
-  // Pre-roll ad every N songs (free users only)
+  // Pre-roll ad every 14 min of listening (free users only)
   _songsPlayed++;
+  startListenTimer();
   if (shouldShowPreRoll()) await showPreRollAd();
 
   updatePlayerUI(track);
