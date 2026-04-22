@@ -491,13 +491,13 @@ async function loadHome() {
     sec.dataset.gridId = id;
     sec.innerHTML = `<h3 class="section-title">${label}</h3>
       <div class="card-grid" id="${id}">
-        ${Array(10).fill(0).map(()=>`<div class="music-card"><div class="card-art skeleton" style="aspect-ratio:1"></div><div class="card-body"><div class="skeleton" style="height:13px;width:80%;margin-bottom:6px"></div><div class="skeleton" style="height:11px;width:60%"></div></div></div>`).join('')}
+        ${Array(5).fill(0).map(()=>`<div class="music-card"><div class="card-art skeleton" style="aspect-ratio:1"></div><div class="card-body"><div class="skeleton" style="height:13px;width:80%;margin-bottom:6px"></div><div class="skeleton" style="height:11px;width:60%"></div></div></div>`).join('')}
       </div>`;
     view.appendChild(sec);
   }
 
-  // Lazy load: only fire yt-dlp when a section scrolls into view
-  // Max 2 concurrent loads so search/radio always stay responsive
+  // ── Scroll-based lazy loading (no IntersectionObserver — timing issues in packaged app)
+  // Max 2 concurrent yt-dlp calls so search/radio stay responsive.
   let _activeLoads = 0;
   const _loadQueue = [];
 
@@ -509,20 +509,25 @@ async function loadHome() {
     }
   }
 
-  // root: view — weil .view selbst scrollt (overflow-y: auto), nicht der Browser
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (!entry.isIntersecting) return;
-      const sec = entry.target;
+  function queueVisible() {
+    const viewTop    = view.scrollTop;
+    const viewBottom = viewTop + view.clientHeight + 500; // 500px lookahead
+    view.querySelectorAll('.home-section').forEach(sec => {
       if (sec.dataset.loaded) return;
-      sec.dataset.loaded = '1';
-      observer.unobserve(sec);
-      _loadQueue.push({ query: sec.dataset.query, gridId: sec.dataset.gridId });
-      drainQueue();
+      // offsetTop is relative to the scroll container (view)
+      if (sec.offsetTop < viewBottom) {
+        sec.dataset.loaded = '1';
+        _loadQueue.push({ query: sec.dataset.query, gridId: sec.dataset.gridId });
+      }
     });
-  }, { root: view, rootMargin: '300px' });
+    drainQueue();
+  }
 
-  view.querySelectorAll('.home-section').forEach(sec => observer.observe(sec));
+  // Trigger on scroll
+  view.addEventListener('scroll', queueVisible, { passive: true });
+
+  // Trigger immediately (after one frame so offsetTop is computed)
+  requestAnimationFrame(() => { requestAnimationFrame(queueVisible); });
 }
 
 async function loadSection(query, gridId) {
