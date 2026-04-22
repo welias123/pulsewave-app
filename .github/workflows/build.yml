@@ -29,7 +29,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/Pulsewave-Setup.exe
+            dist/Pulsewave-Setup-*.exe
             dist/latest.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -57,7 +57,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            dist/*.dmg
+            dist/Pulsewave-Mac-*.dmg
             dist/latest-mac.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

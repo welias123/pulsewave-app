@@ -1,8 +1,12 @@
 {
   "name": "pulsewave",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Your music, your way.",
-  "author": "Pulsewave",
+  "author": {
+    "name": "Pulsewave",
+    "email": "pulsewave.noreply@gmail.com",
+    "url": "https://welias123.github.io/pulsewave-website"
+  },
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -49,14 +53,14 @@
           ]
         }
       ],
-      "artifactName": "Pulsewave-Setup.exe",
+      "artifactName": "Pulsewave-Setup-${version}.exe",
       "signingHashAlgorithms": null,
       "sign": null,
       "forceCodeSigning": false
     },
     "mac": {
       "target": [{"target": "dmg", "arch": ["universal"]}],
-      "artifactName": "Pulsewave-Mac.dmg",
+      "artifactName": "Pulsewave-Mac-${version}.dmg",
       "category": "public.app-category.music",
       "hardenedRuntime": false,
       "gatekeeperAssess": false
@@ -79,7 +83,9 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "installerIcon": null,
-      "uninstallerIcon": null
+      "uninstallerIcon": null,
+      "include": "build/installer.nsh",
+      "warningsAsErrors": false
     }
   }
 }
