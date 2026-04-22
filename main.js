@@ -173,14 +173,16 @@ ipcMain.on('go-to-app', (_, userData) => {
     try {
       const token = userData.token;
       if (token) {
-        const { net } = require('electron');
         const req = net.request({ method:'GET', url:'https://pulsewave-welias.loca.lt/api/me', headers:{ Authorization:'Bearer '+token, 'bypass-tunnel-reminder':'true' } });
-        const data = await new Promise((resolve,reject) => {
-          let body='';
-          req.on('response', r => { r.on('data',d=>body+=d); r.on('end',()=>{ try{resolve(JSON.parse(body))}catch{reject()} }); });
-          req.on('error', reject);
-          req.end();
-        });
+        const data = await Promise.race([
+          new Promise((resolve, reject) => {
+            let body = '';
+            req.on('response', r => { r.on('data', d => body += d); r.on('end', () => { try { resolve(JSON.parse(body)); } catch { reject(); } }); });
+            req.on('error', reject);
+            req.end();
+          }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+        ]);
         isPremium = data?.user?.is_premium || false;
       }
     } catch { /* backend unreachable, default to free */ }
