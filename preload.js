@@ -58,6 +58,7 @@ contextBridge.exposeInMainWorld('pw', {
   openMiniPlayer:  (track) => ipcRenderer.send('open-mini-player', track),
   closeMiniPlayer: ()      => ipcRenderer.send('close-mini-player'),
   miniTrackUpdate: (track) => ipcRenderer.send('mini-track-update', track),
+  miniControl:     (cmd)   => ipcRenderer.send('mini-control', cmd),
   onMiniCmd:       (cb)    => ipcRenderer.on('mini-cmd', (_, cmd) => cb(cmd)),
   onMiniTrack:     (cb)    => ipcRenderer.on('mini-track', (_, t)  => cb(t)),
 });

@@ -35,14 +35,14 @@
       <div class="mini-artist" id="mini-artist">Kein Song</div>
     </div>
     <div class="mini-controls">
-      <button class="mini-btn" onclick="pw.miniControl('prev')" title="Zurück">
+      <button class="mini-btn" onclick="miniCmd('prev')" title="Zurück">
         <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="19 20 9 12 19 4"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"/></svg>
       </button>
-      <button class="mini-btn mini-play" id="mini-play-btn" onclick="pw.miniControl('play')">
+      <button class="mini-btn mini-play" id="mini-play-btn" onclick="miniCmd('play')">
         <svg id="mini-play-icon" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="5 3 19 12 5 21"/></svg>
         <svg id="mini-pause-icon" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
       </button>
-      <button class="mini-btn" onclick="pw.miniControl('next')" title="Weiter">
+      <button class="mini-btn" onclick="miniCmd('next')" title="Weiter">
         <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="5 4 15 12 5 20"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"/></svg>
       </button>
     </div>
@@ -63,12 +63,11 @@
       document.getElementById('mini-play-icon').style.display  = _playing ? 'none' : 'block';
       document.getElementById('mini-pause-icon').style.display = _playing ? 'block' : 'none';
     }
-    // Toggle play state locally for instant feedback
-    const origControl = pw.miniControl;
-    pw.miniControl = (cmd) => {
+    // Send command via preload bridge + toggle UI state instantly for play
+    function miniCmd(cmd) {
       if (cmd === 'play') { _playing = !_playing; updatePlayBtn(); }
-      ipcRenderer.send('mini-control', cmd);
-    };
+      pw.miniControl(cmd);
+    }
   </script>
 </body>
 </html>

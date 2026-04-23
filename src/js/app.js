@@ -466,11 +466,23 @@ const RADIO_STATIONS = [
 
 window.addEventListener('DOMContentLoaded', () => {
   initPlayer();
+
+  // Instantly restore username from localStorage so the UI never shows "User"/"?"
+  const _savedUsername = localStorage.getItem('pw_username');
+  if (_savedUsername) {
+    document.getElementById('user-name').textContent   = _savedUsername;
+    document.getElementById('user-avatar').textContent = _savedUsername[0].toUpperCase();
+    document.getElementById('user-avatar').style.background = 'var(--yellow)';
+    document.getElementById('user-avatar').style.color = '#000';
+  }
+
   pw.onUserData(async (data) => {
     _userId    = data.userId;
     _username  = data.username;
     window._userId    = _userId;
     window._authToken = data.token || null;
+    // Persist so next startup pre-populates instantly
+    localStorage.setItem('pw_username', _username);
     document.getElementById('user-name').textContent   = _username || 'User';
     document.getElementById('user-avatar').textContent = (_username || 'U')[0].toUpperCase();
     document.getElementById('user-avatar').style.background = 'var(--yellow)';
@@ -1233,7 +1245,11 @@ function bindTrackRows(view, allTracks) {
   view.querySelectorAll('.track-row').forEach((row, i) => {
     const track = allTracks[i];
     if (!track) return;
-    row.addEventListener('dblclick', () => playTrack(track, allTracks, i));
+    // Override inline handlers so the full queue is always passed
+    row.ondblclick = () => playTrack(track, allTracks, i);
+    // Play button: override inline onclick so queue is set to full list
+    const playBtn = row.querySelector('.btn-track-action[title="Play"]');
+    if (playBtn) playBtn.onclick = (e) => { e.stopPropagation(); playTrack(track, allTracks, i); };
     row.addEventListener('contextmenu', (e) => {
       const inPL = row.closest('#view-playlist');
       const plId = inPL ? parseInt(document.querySelector('.pl-sidebar-item.active')?.dataset.id) : null;
