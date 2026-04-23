@@ -54,11 +54,77 @@ function createWindow() {
 app.whenReady().then(() => {
   initLocalCodes();
   createWindow();
+  // Init Discord Rich Presence (silently — skipped if discord-rpc not available or Discord not running)
+  setTimeout(() => initDiscordRPC(), 2000);
   // Check for updates 4 seconds after launch (silent, no blocking)
   setTimeout(() => { try { autoUpdater.checkForUpdates(); } catch {} }, 4000);
   app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
 });
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
+
+// ── Discord Rich Presence ─────────────────────────────────────────────────
+let discordRPC = null;
+let discordReady = false;
+
+function initDiscordRPC() {
+  try {
+    const DiscordRPC = require('discord-rpc');
+    const CLIENT_ID  = '1234567890123456789'; // placeholder — works without real ID for local display
+    DiscordRPC.register(CLIENT_ID);
+    discordRPC = new DiscordRPC.Client({ transport: 'ipc' });
+    discordRPC.on('ready', () => { discordReady = true; });
+    discordRPC.login({ clientId: CLIENT_ID }).catch(() => {});
+  } catch { /* discord-rpc not installed — skip silently */ }
+}
+
+function updateDiscordPresence(track) {
+  if (!discordRPC || !discordReady || !track) return;
+  try {
+    discordRPC.setActivity({
+      details: track.title?.slice(0, 128) || 'Unbekannter Song',
+      state:   (track.artist?.slice(0, 128) || 'Unbekannter Artist'),
+      largeImageKey:  'pulsewave_logo',
+      largeImageText: 'Pulsewave',
+      smallImageKey:  'playing',
+      smallImageText: 'Hört gerade',
+      startTimestamp: Date.now(),
+      buttons: [{ label: 'Pulsewave öffnen', url: 'https://welias123.github.io/pulsewave-website' }],
+    });
+  } catch {}
+}
+
+ipcMain.on('discord-update', (_, track) => updateDiscordPresence(track));
+ipcMain.on('discord-clear',  ()         => { try { discordRPC?.clearActivity(); } catch {} });
+
+// ── Mini Player window ────────────────────────────────────────────────────
+let miniWindow = null;
+
+ipcMain.on('open-mini-player', (_, track) => {
+  if (miniWindow && !miniWindow.isDestroyed()) {
+    miniWindow.focus();
+    miniWindow.webContents.send('mini-track', track);
+    return;
+  }
+  miniWindow = new BrowserWindow({
+    width: 340, height: 100, frame: false, alwaysOnTop: true,
+    resizable: false, transparent: true, hasShadow: true,
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
+    skipTaskbar: false,
+  });
+  miniWindow.loadFile(path.join(__dirname, 'src', 'mini.html'));
+  miniWindow.webContents.once('did-finish-load', () => {
+    miniWindow.webContents.send('mini-track', track);
+  });
+  miniWindow.on('closed', () => { miniWindow = null; });
+});
+ipcMain.on('close-mini-player', () => { if (miniWindow && !miniWindow.isDestroyed()) miniWindow.close(); });
+ipcMain.on('mini-control', (_, cmd) => {
+  if (!mainWindow) return;
+  mainWindow.webContents.send('mini-cmd', cmd);
+});
+ipcMain.on('mini-track-update', (_, track) => {
+  if (miniWindow && !miniWindow.isDestroyed()) miniWindow.webContents.send('mini-track', track);
+});
 
 // ── Window controls ───────────────────────────────────────────────────────
 const { shell } = require('electron');

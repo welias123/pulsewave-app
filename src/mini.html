@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8"/>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      background:rgba(12,12,12,.95);border-radius:14px;overflow:hidden;
+      font-family:-apple-system,'Segoe UI',sans-serif;user-select:none;
+      border:1px solid rgba(255,214,0,.2);height:100px;
+      -webkit-app-region:drag;
+    }
+    .mini{display:flex;align-items:center;gap:10px;padding:10px 12px;height:100%}
+    .mini-art{width:52px;height:52px;border-radius:8px;object-fit:cover;background:#1a1a1a;flex-shrink:0}
+    .mini-info{flex:1;min-width:0}
+    .mini-title{font-size:12px;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .mini-artist{font-size:11px;color:#666;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .mini-controls{display:flex;align-items:center;gap:4px;-webkit-app-region:no-drag;flex-shrink:0}
+    .mini-btn{background:none;border:none;color:#888;cursor:pointer;padding:6px;border-radius:6px;transition:.15s;display:flex;align-items:center;justify-content:center}
+    .mini-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+    .mini-play{background:rgba(255,214,0,.12);color:#FFD600;border-radius:50%;width:32px;height:32px}
+    .mini-play:hover{background:rgba(255,214,0,.25)}
+    .mini-close{position:absolute;top:6px;right:8px;background:none;border:none;color:#444;cursor:pointer;font-size:13px;-webkit-app-region:no-drag;transition:.15s}
+    .mini-close:hover{color:#fff}
+    #mini-play-icon{display:block}
+    #mini-pause-icon{display:none}
+  </style>
+</head>
+<body>
+  <button class="mini-close" onclick="pw.closeMiniPlayer()">✕</button>
+  <div class="mini">
+    <img class="mini-art" id="mini-art" src="" onerror="this.style.opacity=0"/>
+    <div class="mini-info">
+      <div class="mini-title" id="mini-title">—</div>
+      <div class="mini-artist" id="mini-artist">Kein Song</div>
+    </div>
+    <div class="mini-controls">
+      <button class="mini-btn" onclick="pw.miniControl('prev')" title="Zurück">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="19 20 9 12 19 4"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"/></svg>
+      </button>
+      <button class="mini-btn mini-play" id="mini-play-btn" onclick="pw.miniControl('play')">
+        <svg id="mini-play-icon" viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="5 3 19 12 5 21"/></svg>
+        <svg id="mini-pause-icon" viewBox="0 0 24 24" fill="currentColor" width="14" height="14" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      </button>
+      <button class="mini-btn" onclick="pw.miniControl('next')" title="Weiter">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="5 4 15 12 5 20"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"/></svg>
+      </button>
+    </div>
+  </div>
+  <script>
+    let _playing = true;
+    pw.onMiniTrack(t => {
+      if (!t) return;
+      document.getElementById('mini-title').textContent  = t.title  || '—';
+      document.getElementById('mini-artist').textContent = t.artist || '—';
+      const art = document.getElementById('mini-art');
+      art.src = t.thumbnail || '';
+      art.style.opacity = '1';
+      _playing = t.playing !== false;
+      updatePlayBtn();
+    });
+    function updatePlayBtn() {
+      document.getElementById('mini-play-icon').style.display  = _playing ? 'none' : 'block';
+      document.getElementById('mini-pause-icon').style.display = _playing ? 'block' : 'none';
+    }
+    // Toggle play state locally for instant feedback
+    const origControl = pw.miniControl;
+    pw.miniControl = (cmd) => {
+      if (cmd === 'play') { _playing = !_playing; updatePlayBtn(); }
+      ipcRenderer.send('mini-control', cmd);
+    };
+  </script>
+</body>
+</html>

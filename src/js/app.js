@@ -1286,7 +1286,7 @@ function _renderSettings(view) {
       </div>
 
       <div style="text-align:center;color:#333;font-size:11px;padding:24px 0">
-        Pulsewave v${typeof appVersion !== 'undefined' ? appVersion : '1.5.19'} · Made with ♥
+        Pulsewave v${typeof appVersion !== 'undefined' ? appVersion : '1.5.24'} · Made with ♥
       </div>
     </div>`;
 }
@@ -1419,6 +1419,7 @@ let _vizActive = false;
 function startVisualizer() {
   const canvas = document.getElementById('visualizer-canvas');
   if (!canvas) return;
+  canvas.style.display = 'block';
   const ctx2 = canvas.getContext('2d');
   _vizActive = true;
 
@@ -1452,7 +1453,10 @@ function stopVisualizer() {
   _vizActive = false;
   if (_vizRaf) cancelAnimationFrame(_vizRaf);
   const canvas = document.getElementById('visualizer-canvas');
-  if (canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+  if (canvas) {
+    canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+    canvas.style.display = 'none';
+  }
 }
 
 // Auto-start visualizer when music plays
@@ -1622,3 +1626,98 @@ function loadStats() {
       </div>
     </div>`;
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MINI PLAYER
+// ══════════════════════════════════════════════════════════════════════════════
+
+function openMiniPlayer() {
+  if (!currentTrack) { showNotif('Kein Song läuft gerade'); return; }
+  pw.openMiniPlayer({ ...currentTrack, playing: audioEl ? !audioEl.paused : false });
+  showNotif('Mini Player geöffnet');
+}
+
+// Listen for commands sent from the mini player window
+if (typeof pw !== 'undefined' && pw.onMiniCmd) {
+  pw.onMiniCmd(cmd => {
+    if      (cmd === 'play') togglePlay();
+    else if (cmd === 'next') nextTrack();
+    else if (cmd === 'prev') prevTrack();
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// MULTILANGUAGE (DE / EN)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const LANG_STRINGS = {
+  de: {
+    home: 'Home', search: 'Suche', browse: 'Entdecken', radio: 'Radio',
+    liked: 'Liked Songs', history: 'Verlauf', stats: 'Statistiken',
+    settings: 'Einstellungen', playlists: 'Playlists',
+    selectSong: 'Wähle einen Song zum Abspielen',
+  },
+  en: {
+    home: 'Home', search: 'Search', browse: 'Browse', radio: 'Radio',
+    liked: 'Liked Songs', history: 'History', stats: 'Statistics',
+    settings: 'Settings', playlists: 'Playlists',
+    selectSong: 'Select a song to play',
+  },
+};
+
+let _lang = (() => { try { return localStorage.getItem('pw_lang') || 'de'; } catch { return 'de'; } })();
+
+function toggleLanguage() {
+  _lang = _lang === 'de' ? 'en' : 'de';
+  try { localStorage.setItem('pw_lang', _lang); } catch {}
+  const btn = document.getElementById('btn-lang');
+  if (btn) btn.textContent = _lang.toUpperCase();
+  applyLanguage();
+  showNotif(_lang === 'de' ? '🇩🇪 Deutsch' : '🇬🇧 English');
+}
+
+function applyLanguage() {
+  const t = LANG_STRINGS[_lang] || LANG_STRINGS.de;
+
+  // Update nav item text nodes
+  document.querySelectorAll('.nav-item').forEach(a => {
+    const oc = a.getAttribute('onclick') || '';
+    // Last child text node carries the label
+    const textNode = [...a.childNodes].find(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
+    if (!textNode) return;
+    if (oc.includes("'home'"))     textNode.textContent = '\n        ' + t.home + '\n      ';
+    if (oc.includes("'search'"))   textNode.textContent = '\n        ' + t.search + '\n      ';
+    if (oc.includes("'browse'"))   textNode.textContent = '\n        ' + t.browse + '\n      ';
+    if (oc.includes("'radio'"))    textNode.textContent = '\n        ' + t.radio + '\n      ';
+    if (oc.includes("'liked'"))    textNode.textContent = '\n        ' + t.liked + '\n      ';
+    if (oc.includes("'history'"))  textNode.textContent = '\n        ' + t.history + '\n      ';
+    if (oc.includes("'stats'"))    textNode.textContent = '\n        ' + t.stats + '\n      ';
+    if (oc.includes("'settings'")) textNode.textContent = '\n        ' + t.settings + '\n      ';
+  });
+
+  // Sidebar playlists header
+  document.querySelectorAll('.section-header > span').forEach(s => {
+    if (/playlist/i.test(s.textContent)) s.textContent = t.playlists;
+  });
+
+  // Player sub-text when no song playing
+  const artistEl = document.getElementById('player-artist');
+  if (artistEl) {
+    const cur = artistEl.textContent.trim();
+    if (cur === 'Select a song to play' || cur === 'Wähle einen Song zum Abspielen') {
+      artistEl.textContent = t.selectSong;
+    }
+  }
+
+  // Update lang button
+  const btn = document.getElementById('btn-lang');
+  if (btn) btn.textContent = _lang.toUpperCase();
+}
+
+// Apply persisted language immediately once DOM is ready
+(function initLang() {
+  const btn = document.getElementById('btn-lang');
+  if (btn) btn.textContent = _lang.toUpperCase();
+  // Defer nav label updates until after pw user-data arrives
+  setTimeout(applyLanguage, 300);
+})();

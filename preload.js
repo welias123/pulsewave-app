@@ -43,10 +43,21 @@ contextBridge.exposeInMainWorld('pw', {
   clearLiked:      (d) => ipcRenderer.invoke('clear-liked', d),
 
   // Auto-updater
-  onUpdateAvailable: (cb) => ipcRenderer.on('update-available', (_, v) => cb(v)),
+  onUpdateAvailable:  (cb) => ipcRenderer.on('update-available',  (_, v) => cb(v)),
   onUpdateDownloaded: (cb) => ipcRenderer.on('update-downloaded', (_, v) => cb(v)),
   installUpdate: () => ipcRenderer.send('install-update'),
 
   // Open external URL in browser
   openUrl: (url) => ipcRenderer.send('open-url', url),
+
+  // Discord Rich Presence
+  discordUpdate: (track) => ipcRenderer.send('discord-update', track),
+  discordClear:  ()      => ipcRenderer.send('discord-clear'),
+
+  // Mini Player
+  openMiniPlayer:  (track) => ipcRenderer.send('open-mini-player', track),
+  closeMiniPlayer: ()      => ipcRenderer.send('close-mini-player'),
+  miniTrackUpdate: (track) => ipcRenderer.send('mini-track-update', track),
+  onMiniCmd:       (cb)    => ipcRenderer.on('mini-cmd', (_, cmd) => cb(cmd)),
+  onMiniTrack:     (cb)    => ipcRenderer.on('mini-track', (_, t)  => cb(t)),
 });

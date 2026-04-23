@@ -1,6 +1,6 @@
 {
   "name": "pulsewave",
-  "version": "1.5.23",
+  "version": "1.5.24",
   "description": "Your music, your way.",
   "author": {
     "name": "Pulsewave",
@@ -18,7 +18,8 @@
   },
   "dependencies": {
     "electron-updater": "^6.1.7",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "discord-rpc": "^4.0.1"
   },
   "devDependencies": {
     "canvas": "^3.2.3",

@@ -429,6 +429,10 @@ async function playTrack(track, queueList, startIdx) {
     if (typeof trackStatPlay === 'function') trackStatPlay(track);
     // Auto-fetch lyrics if panel open
     if (typeof _lyricsVisible !== 'undefined' && _lyricsVisible) fetchLyrics(track);
+    // Discord Rich Presence
+    if (typeof pw !== 'undefined' && pw.discordUpdate) pw.discordUpdate(track);
+    // Mini Player — update if open
+    if (typeof pw !== 'undefined' && pw.miniTrackUpdate) pw.miniTrackUpdate({ ...track, playing: true });
     // Save to history
     if (window._userId) pw.addToHistory({ userId: window._userId, track });
     // Update like btn
@@ -454,8 +458,13 @@ function updatePlayerUI(track) {
 
 function togglePlay() {
   if (!audioEl.src) return;
-  if (audioEl.paused) { AudioEngine.play(); updatePlayBtn(true); }
-  else { AudioEngine.pause(); updatePlayBtn(false); }
+  if (audioEl.paused) {
+    AudioEngine.play(); updatePlayBtn(true);
+    if (typeof pw !== 'undefined' && pw.miniTrackUpdate && currentTrack) pw.miniTrackUpdate({ ...currentTrack, playing: true });
+  } else {
+    AudioEngine.pause(); updatePlayBtn(false);
+    if (typeof pw !== 'undefined' && pw.miniTrackUpdate && currentTrack) pw.miniTrackUpdate({ ...currentTrack, playing: false });
+  }
 }
 
 function updatePlayBtn(playing) {
