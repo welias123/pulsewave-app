@@ -509,6 +509,7 @@ function navigate(view, el) {
   else if (view === 'radio')    { loadRadio(); }
   else if (view === 'settings') { loadSettings(); }
   else if (view === 'stats')    { loadStats(); }
+  else if (view === 'home')    { loadHome(); }
 }
 
 function navigateToPlaylist(playlistId) {
@@ -527,17 +528,89 @@ function navigateToPlaylist(playlistId) {
 
 // ── Home ────────────────────────────────────────────────────────────────────
 
+const HOME_CACHE_KEY = 'pw_home_sections';
+const HOME_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+function buildPersonalizedSections() {
+  // Get top artists from stats
+  const stats = getStats();
+  const plays = Object.values(stats.plays || {});
+  const artistCounts = {};
+  plays.forEach(p => {
+    if (p.artist && p.artist !== 'Unknown') {
+      artistCounts[p.artist] = (artistCounts[p.artist] || 0) + p.count;
+    }
+  });
+  const topArtists = Object.entries(artistCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([name]) => name);
+
+  const sections = [];
+
+  // Personal sections based on listening history
+  if (topArtists.length >= 1) {
+    sections.push({ label: `🎵 Weil du ${topArtists[0]} magst`, query: `${topArtists[0]} official audio song` });
+  }
+  if (topArtists.length >= 2) {
+    sections.push({ label: `🔥 Mehr von ${topArtists[1]}`, query: `${topArtists[1]} official audio` });
+  }
+
+  // Mix of fresh & variety sections
+  sections.push({ label: '⭐ Für dich empfohlen', query: 'popular official audio song 2024 hit' });
+
+  if (topArtists.length >= 3) {
+    sections.push({ label: `🎤 ${topArtists[2]} & Ähnliches`, query: `${topArtists[2]} official audio` });
+  }
+
+  if (topArtists.length >= 4) {
+    sections.push({ label: `🎧 ${topArtists[3]} Hits`, query: `${topArtists[3]} official audio song` });
+  }
+
+  // Fill rest from HOME_QUERIES, shuffled for variety
+  const shuffled = [...HOME_QUERIES].sort(() => Math.random() - 0.5);
+  for (const q of shuffled) {
+    if (sections.length >= 12) break;
+    // Don't duplicate similar queries from personal sections
+    const isDupe = topArtists.some(a => q.query.toLowerCase().includes(a.toLowerCase()));
+    if (!isDupe) sections.push(q);
+  }
+
+  return sections;
+}
+
 async function loadHome() {
   const view = document.getElementById('view-home');
   const h = new Date().getHours();
   const greeting = h < 12 ? 'Guten Morgen' : h < 18 ? 'Guten Tag' : 'Guten Abend';
+
+  // Check cache
+  let cachedSections = null;
+  try {
+    const raw = localStorage.getItem(HOME_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.ts < HOME_CACHE_TTL) cachedSections = parsed.sections;
+    }
+  } catch {}
+
+  const sections = cachedSections || buildPersonalizedSections();
+
+  // Save to cache if fresh
+  if (!cachedSections) {
+    try { localStorage.setItem(HOME_CACHE_KEY, JSON.stringify({ sections, ts: Date.now() })); } catch {}
+  }
+
+  const hasHistory = (() => {
+    try { const s = getStats(); return Object.keys(s.plays||{}).length > 0; } catch { return false; }
+  })();
 
   view.innerHTML = `
     <div class="home-hero">
       <div class="home-hero-text">
         <p class="home-hero-eyebrow">${greeting}, <strong>${esc(_username)}</strong> 👋</p>
         <h1 class="home-hero-title">Deine Musik.<br>Dein Moment.</h1>
-        <p class="home-hero-sub">Entdecke neue Hits, entspanne mit Lofi oder pumpe dein Workout hoch.</p>
+        <p class="home-hero-sub">${hasHistory ? 'Basierend auf deinem Musikgeschmack — jeden Tag frisch.' : 'Entdecke neue Hits, entspanne mit Lofi oder pumpe dein Workout hoch.'}</p>
         <div class="home-hero-btns">
           <button class="hero-btn-primary" onclick="navigate('browse',document.querySelector('[onclick*=browse]'))">
             <svg viewBox="0 0 24 24" fill="currentColor" width="15" height="15"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
@@ -562,8 +635,8 @@ async function loadHome() {
       </div>
     </div>`;
 
-  // Build all section containers first (with skeleton placeholders)
-  for (const { label, query } of HOME_QUERIES) {
+  // Build all section containers with skeleton placeholders
+  for (const { label, query } of sections) {
     const id = 'grid-' + label.replace(/[^\w]/g,'_');
     const sec = document.createElement('div');
     sec.className = 'home-section';
@@ -576,11 +649,11 @@ async function loadHome() {
     view.appendChild(sec);
   }
 
-  // ── Lazy loading: max 2 concurrent yt-dlp calls
+  // Lazy loading with max 2 concurrent yt-dlp calls
   let _activeLoads = 0;
   const _loadQueue = [];
   const _allSections = [...view.querySelectorAll('.home-section')];
-  let _nextIdx = 0; // index into _allSections for scroll-based loading
+  let _nextIdx = 0;
 
   function drainQueue() {
     while (_activeLoads < 2 && _loadQueue.length) {
@@ -596,29 +669,20 @@ async function loadHome() {
     _loadQueue.push({ query: sec.dataset.query, gridId: sec.dataset.gridId });
   }
 
-  // Load first 4 sections immediately — no geometry checks needed
   for (let i = 0; i < Math.min(4, _allSections.length); i++) {
     enqueue(_allSections[i]);
     _nextIdx = i + 1;
   }
   drainQueue();
 
-  // Load more as user scrolls
   view.addEventListener('scroll', () => {
-    const threshold = view.scrollTop + view.clientHeight + 600;
     while (_nextIdx < _allSections.length) {
       const sec = _allSections[_nextIdx];
-      // sec.offsetTop is relative to nearest positioned ancestor;
-      // use getBoundingClientRect for reliable position
       const rect = sec.getBoundingClientRect();
       const viewRect = view.getBoundingClientRect();
       if (rect.top - viewRect.top < view.clientHeight + 600) {
-        enqueue(sec);
-        _nextIdx++;
-        drainQueue();
-      } else {
-        break;
-      }
+        enqueue(sec); _nextIdx++; drainQueue();
+      } else { break; }
     }
   }, { passive: true });
 }
@@ -1046,7 +1110,7 @@ function trackRowHTML(track, idx, allTracks, opts = {}) {
     <img class="track-thumb" src="${esc(track.thumbnail)}" alt="" loading="lazy"/>
     <div class="track-info">
       <span class="track-title">${esc(track.title)}</span>
-      <span class="track-artist">${esc(track.artist)}</span>
+      <span class="track-artist artist-link" onclick="event.stopPropagation();openArtistPage(${JSON.stringify(track.artist||'').replace(/"/g,'&quot;')})">${esc(track.artist)}</span>
     </div>
     <span class="track-dur">${esc(track.duration)}</span>
     <div class="track-actions">
@@ -1109,7 +1173,7 @@ function makeCard(track, allTracks, idx) {
     <img class="card-art" src="${esc(track.thumbnail)}" alt="" loading="lazy"/>
     <div class="card-body">
       <div class="card-title">${esc(track.title)}</div>
-      <div class="card-sub">${esc(track.artist)}</div>
+      <div class="card-sub artist-link" onclick="event.stopPropagation();openArtistPage(${JSON.stringify(track.artist||'').replace(/"/g,'&quot;')})">${esc(track.artist)}</div>
     </div>
     <div class="card-actions">
       <button class="card-like-btn" title="Like">
@@ -1286,7 +1350,7 @@ function _renderSettings(view) {
       </div>
 
       <div style="text-align:center;color:#333;font-size:11px;padding:24px 0">
-        Pulsewave v${typeof appVersion !== 'undefined' ? appVersion : '1.5.24'} · Made with ♥
+        Pulsewave v${typeof appVersion !== 'undefined' ? appVersion : '1.5.25'} · Made with ♥
       </div>
     </div>`;
 }
@@ -1626,6 +1690,184 @@ function loadStats() {
       </div>
     </div>`;
 }
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ARTIST PAGE
+// ══════════════════════════════════════════════════════════════════════════════
+
+async function openArtistPage(artistName) {
+  if (!artistName || artistName === 'Unknown') return;
+
+  // Switch to artist view
+  document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+  const view = document.getElementById('view-artist');
+  view.style.display = 'block';
+  _currentView = 'artist';
+
+  const initial = artistName[0]?.toUpperCase() || '?';
+  view.innerHTML = `
+    <button class="artist-back-btn" onclick="history.go(-1);navigate('home',document.querySelector('.nav-item'))">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="15 18 9 12 15 6"/></svg>
+      Zurück
+    </button>
+    <div class="artist-header">
+      <div class="artist-avatar-large">${esc(initial)}</div>
+      <div class="artist-header-info">
+        <div class="artist-header-label">Artist</div>
+        <h1 class="artist-header-name">${esc(artistName)}</h1>
+        <button class="artist-play-btn" id="artist-play-btn" disabled>
+          <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Alle abspielen
+        </button>
+      </div>
+    </div>
+    <h3 class="section-title">Songs</h3>
+    <div class="track-list" id="artist-track-list">
+      ${Array(8).fill(0).map(() => skeletonRow()).join('')}
+    </div>`;
+
+  const res = await pw.search(`${artistName} official audio song`);
+  const list = document.getElementById('artist-track-list');
+  if (!list) return;
+
+  if (!res.ok || !res.results?.length) {
+    list.innerHTML = `<div class="empty-state"><h3>Keine Songs gefunden</h3><p>Versuche eine Suche nach "${esc(artistName)}"</p></div>`;
+    return;
+  }
+
+  const blacklist = ['playlist','mix','compilation','top 10','top 20','best of','hour','hours','stunden','megamix','nonstop','collection','full album'];
+  const tracks = res.results.filter(t => {
+    const s = t.durationSec || 0;
+    if (s < 60 || s > 480) return false;
+    const tl = (t.title || '').toLowerCase();
+    return !blacklist.some(w => tl.includes(w));
+  });
+  const finalTracks = tracks.length >= 3 ? tracks : res.results.filter(t => (t.durationSec||0) < 480).slice(0,8);
+
+  list.innerHTML = finalTracks.map((t, i) => trackRowHTML(t, i, finalTracks)).join('');
+  bindTrackRows(view, finalTracks);
+
+  // Enable play all button
+  const playBtn = document.getElementById('artist-play-btn');
+  if (playBtn && finalTracks.length) {
+    playBtn.disabled = false;
+    playBtn.onclick = () => playTrack(finalTracks[0], finalTracks, 0);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// QUEUE MANAGER
+// ══════════════════════════════════════════════════════════════════════════════
+
+let _queueVisible = false;
+let _dragSrcIdx = null;
+
+function toggleQueue() {
+  _queueVisible = !_queueVisible;
+  const panel = document.getElementById('queue-panel');
+  const btn   = document.getElementById('btn-queue');
+  panel.style.display = _queueVisible ? 'flex' : 'none';
+  btn?.classList.toggle('active', _queueVisible);
+  if (_queueVisible) renderQueue();
+}
+
+function renderQueue() {
+  const list = document.getElementById('queue-list');
+  if (!list) return;
+
+  // queue and queueIdx come from player.js (same window scope)
+  if (!queue || !queue.length) {
+    list.innerHTML = '<div class="queue-empty">Keine Songs in der Warteschlange</div>';
+    return;
+  }
+
+  list.innerHTML = queue.map((t, i) => {
+    const isCurrent = i === queueIdx;
+    return `<div class="queue-item${isCurrent ? ' queue-current' : ''}"
+        draggable="true"
+        data-qi="${i}"
+        onclick="_queueJump(${i})"
+        ondragstart="_queueDragStart(event,${i})"
+        ondragover="_queueDragOver(event,${i})"
+        ondrop="_queueDrop(event,${i})"
+        ondragleave="_queueDragLeave(event)">
+      <span class="queue-drag-handle" title="Ziehen zum Sortieren">☰</span>
+      <img class="queue-item-thumb" src="${esc(t.thumbnail)}" alt="" onerror="this.style.display='none'"/>
+      <div class="queue-item-info">
+        <span class="queue-item-title">${esc(t.title)}</span>
+        <span class="queue-item-artist">${esc(t.artist)}</span>
+      </div>
+      <span class="queue-item-dur">${esc(t.duration)}</span>
+      <button class="queue-item-remove" title="Entfernen" onclick="event.stopPropagation();_queueRemove(${i})">✕</button>
+    </div>`;
+  }).join('');
+
+  // Scroll current track into view
+  setTimeout(() => {
+    const cur = list.querySelector('.queue-current');
+    if (cur) cur.scrollIntoView({ block: 'nearest' });
+  }, 50);
+}
+
+function _queueJump(idx) {
+  queueIdx = idx;
+  playTrack(queue[idx]);
+  renderQueue();
+}
+
+function _queueRemove(idx) {
+  if (idx === queueIdx) { showNotif('Aktueller Song kann nicht entfernt werden'); return; }
+  queue.splice(idx, 1);
+  if (idx < queueIdx) queueIdx--;
+  renderQueue();
+  showNotif('Song aus Warteschlange entfernt');
+}
+
+// Drag & Drop handlers
+function _queueDragStart(e, idx) {
+  _dragSrcIdx = idx;
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function _queueDragOver(e, idx) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  document.querySelectorAll('.queue-item').forEach(el => el.classList.remove('queue-drag-over'));
+  const el = document.querySelector(`.queue-item[data-qi="${idx}"]`);
+  if (el) el.classList.add('queue-drag-over');
+}
+
+function _queueDragLeave(e) {
+  e.currentTarget?.classList.remove('queue-drag-over');
+}
+
+function _queueDrop(e, toIdx) {
+  e.preventDefault();
+  document.querySelectorAll('.queue-item').forEach(el => el.classList.remove('queue-drag-over'));
+  if (_dragSrcIdx === null || _dragSrcIdx === toIdx) return;
+
+  // Move item in queue
+  const [moved] = queue.splice(_dragSrcIdx, 1);
+  queue.splice(toIdx, 0, moved);
+
+  // Adjust queueIdx
+  if (_dragSrcIdx === queueIdx) {
+    queueIdx = toIdx;
+  } else if (_dragSrcIdx < queueIdx && toIdx >= queueIdx) {
+    queueIdx--;
+  } else if (_dragSrcIdx > queueIdx && toIdx <= queueIdx) {
+    queueIdx++;
+  }
+
+  _dragSrcIdx = null;
+  renderQueue();
+}
+
+// Auto-refresh queue panel when song changes
+const _origPlayTrack = window.playTrack;
+// Hook: re-render queue when playTrack is called (done via MutationObserver-free approach)
+setInterval(() => { if (_queueVisible) renderQueue(); }, 3000);
 
 // ══════════════════════════════════════════════════════════════════════════════
 // MINI PLAYER
