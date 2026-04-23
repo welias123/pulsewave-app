@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut } = require('electron');
 const path = require('path');
 const { exec, execFile } = require('child_process');
 const fs     = require('fs');
@@ -59,7 +59,14 @@ app.whenReady().then(() => {
   // Check for updates 4 seconds after launch (silent, no blocking)
   setTimeout(() => { try { autoUpdater.checkForUpdates(); } catch {} }, 4000);
   app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
+
+  // ── Media Keys (keyboard play/pause/next/prev buttons) ────────────────────
+  globalShortcut.register('MediaPlayPause',     () => { if (mainWindow) mainWindow.webContents.send('mini-cmd', 'play'); });
+  globalShortcut.register('MediaNextTrack',     () => { if (mainWindow) mainWindow.webContents.send('mini-cmd', 'next'); });
+  globalShortcut.register('MediaPreviousTrack', () => { if (mainWindow) mainWindow.webContents.send('mini-cmd', 'prev'); });
 });
+
+app.on('will-quit', () => globalShortcut.unregisterAll());
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });
 
 // ── Discord Rich Presence ─────────────────────────────────────────────────

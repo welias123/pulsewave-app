@@ -429,6 +429,8 @@ async function playTrack(track, queueList, startIdx) {
     if (typeof trackStatPlay === 'function') trackStatPlay(track);
     // Auto-fetch lyrics if panel open
     if (typeof _lyricsVisible !== 'undefined' && _lyricsVisible) fetchLyrics(track);
+    // Refresh queue panel if open
+    if (typeof _queueVisible !== 'undefined' && _queueVisible && typeof renderQueue === 'function') renderQueue();
     // Discord Rich Presence
     if (typeof pw !== 'undefined' && pw.discordUpdate) pw.discordUpdate(track);
     // Mini Player — update if open
