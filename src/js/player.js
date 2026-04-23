@@ -423,6 +423,12 @@ async function playTrack(track, queueList, startIdx) {
     updatePlayBtn(true);
     // Schedule crossfade for next track (premium only)
     audioEl.addEventListener('loadedmetadata', scheduleCrossfade, { once: true });
+    // Start visualizer
+    if (typeof startVisualizer === 'function') startVisualizer();
+    // Track stats
+    if (typeof trackStatPlay === 'function') trackStatPlay(track);
+    // Auto-fetch lyrics if panel open
+    if (typeof _lyricsVisible !== 'undefined' && _lyricsVisible) fetchLyrics(track);
     // Save to history
     if (window._userId) pw.addToHistory({ userId: window._userId, track });
     // Update like btn

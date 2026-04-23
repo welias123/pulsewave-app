@@ -508,6 +508,7 @@ function navigate(view, el) {
   else if (view === 'browse')   { loadBrowse(); }
   else if (view === 'radio')    { loadRadio(); }
   else if (view === 'settings') { loadSettings(); }
+  else if (view === 'stats')    { loadStats(); }
 }
 
 function navigateToPlaylist(playlistId) {
@@ -1047,7 +1048,7 @@ function trackRowHTML(track, idx, allTracks, opts = {}) {
       <span class="track-title">${esc(track.title)}</span>
       <span class="track-artist">${esc(track.artist)}</span>
     </div>
-    <span class="track-dur">${track.duration}</span>
+    <span class="track-dur">${esc(track.duration)}</span>
     <div class="track-actions">
       <button class="btn-track-action" title="Play" onclick="playTrack(${JSON.stringify(track).replace(/"/g,'&quot;')}, null, null)">
         <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -1387,4 +1388,237 @@ function esc(str) {
 
 function skeletonRow() {
   return `<div class="track-row"><span class="track-num skeleton" style="width:20px;height:14px;display:inline-block"></span><div class="track-thumb skeleton"></div><div class="track-info"><span class="skeleton" style="display:block;height:13px;width:60%;margin-bottom:6px"></span><span class="skeleton" style="display:block;height:11px;width:40%"></span></div></div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ══════════════════════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  const tag = document.activeElement?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return; // don't capture while typing
+  switch(e.code) {
+    case 'Space':      e.preventDefault(); togglePlay(); break;
+    case 'ArrowRight': e.preventDefault(); if (e.shiftKey) nextTrack(); else if(audioEl) audioEl.currentTime = Math.min(audioEl.duration||0, audioEl.currentTime+10); break;
+    case 'ArrowLeft':  e.preventDefault(); if (e.shiftKey) prevTrack(); else if(audioEl) audioEl.currentTime = Math.max(0, audioEl.currentTime-10); break;
+    case 'ArrowUp':    e.preventDefault(); { const s=document.getElementById('vol-slider'); if(s){const v=Math.min(100,+s.value+5);s.value=v;setVolume(v);} } break;
+    case 'ArrowDown':  e.preventDefault(); { const s=document.getElementById('vol-slider'); if(s){const v=Math.max(0,+s.value-5);s.value=v;setVolume(v);} } break;
+    case 'KeyM':       toggleMute(); break;
+    case 'KeyL':       toggleLikeCurrent(); break;
+    case 'KeyS':       toggleShuffle(); break;
+    case 'KeyR':       toggleRepeat(); break;
+    case 'KeyE':       toggleEQ(); break;
+  }
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// VISUALIZER
+// ══════════════════════════════════════════════════════════════════════════════
+let _vizRaf = null;
+let _vizActive = false;
+
+function startVisualizer() {
+  const canvas = document.getElementById('visualizer-canvas');
+  if (!canvas) return;
+  const ctx2 = canvas.getContext('2d');
+  _vizActive = true;
+
+  function draw() {
+    if (!_vizActive) return;
+    _vizRaf = requestAnimationFrame(draw);
+    const analyser = typeof AudioEngine !== 'undefined' ? AudioEngine.getAnalyser() : null;
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    const W = canvas.width, H = canvas.height;
+    ctx2.clearRect(0, 0, W, H);
+    if (!analyser) return;
+    const buf = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(buf);
+    const bars = 40;
+    const bw   = W / bars - 1;
+    for (let i = 0; i < bars; i++) {
+      const val  = buf[Math.floor(i * buf.length / bars)] / 255;
+      const h    = Math.max(2, val * H);
+      const hue  = 45 + val * 20; // gold tones
+      ctx2.fillStyle = `hsla(${hue},100%,55%,${0.4 + val*0.5})`;
+      ctx2.beginPath();
+      ctx2.roundRect(i*(bw+1), H-h, bw, h, 2);
+      ctx2.fill();
+    }
+  }
+  draw();
+}
+
+function stopVisualizer() {
+  _vizActive = false;
+  if (_vizRaf) cancelAnimationFrame(_vizRaf);
+  const canvas = document.getElementById('visualizer-canvas');
+  if (canvas) canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+}
+
+// Auto-start visualizer when music plays
+window.addEventListener('pw-playback-started', startVisualizer);
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LYRICS (lrclib.net — free, no API key needed)
+// ══════════════════════════════════════════════════════════════════════════════
+let _lyricsTrackId = null;
+let _lyricsVisible = false;
+let _lyricsLines   = [];
+let _lyricsRaf     = null;
+
+function toggleLyrics() {
+  const panel = document.getElementById('lyrics-panel');
+  _lyricsVisible = !_lyricsVisible;
+  panel.style.display = _lyricsVisible ? 'flex' : 'none';
+  document.getElementById('btn-lyrics')?.classList.toggle('active', _lyricsVisible);
+  if (_lyricsVisible && currentTrack && _lyricsTrackId !== currentTrack.videoId) {
+    fetchLyrics(currentTrack);
+  }
+  if (_lyricsVisible) startLyricsSync();
+  else stopLyricsSync();
+}
+
+async function fetchLyrics(track) {
+  if (!track) return;
+  _lyricsTrackId = track.videoId;
+  const el = document.getElementById('lyrics-content');
+  if (!el) return;
+  el.innerHTML = '<p style="color:#555;text-align:center;margin-top:40px">Lädt...</p>';
+  try {
+    const title  = encodeURIComponent(track.title.replace(/\(.*?\)|\[.*?\]/g,'').trim());
+    const artist = encodeURIComponent(track.artist || '');
+    const res = await fetch(`https://lrclib.net/api/search?track_name=${title}&artist_name=${artist}`);
+    const data = await res.json();
+    const match = data?.find(d => d.syncedLyrics || d.plainLyrics);
+    if (!match) { el.innerHTML = '<p style="color:#555;text-align:center;margin-top:40px">Keine Lyrics gefunden</p>'; _lyricsLines=[]; return; }
+    if (match.syncedLyrics) {
+      _lyricsLines = match.syncedLyrics.split('\n').filter(Boolean).map(l => {
+        const m = l.match(/\[(\d+):(\d+\.\d+)\](.*)/);
+        if (!m) return null;
+        return { time: +m[1]*60 + +m[2], text: m[3].trim() };
+      }).filter(Boolean);
+      renderLyricsLines();
+    } else {
+      _lyricsLines = [];
+      el.innerHTML = '<div class="lyrics-plain">' + match.plainLyrics.split('\n').map(l => `<p>${esc(l)||'&nbsp;'}</p>`).join('') + '</div>';
+    }
+  } catch { el.innerHTML = '<p style="color:#555;text-align:center;margin-top:40px">Fehler beim Laden</p>'; }
+}
+
+function renderLyricsLines() {
+  const el = document.getElementById('lyrics-content');
+  if (!el || !_lyricsLines.length) return;
+  el.innerHTML = '<div class="lyrics-synced">' + _lyricsLines.map((l,i) => `<p class="lyric-line" data-i="${i}">${esc(l.text)||'&nbsp;'}</p>`).join('') + '</div>';
+}
+
+function startLyricsSync() {
+  stopLyricsSync();
+  _lyricsRaf = setInterval(syncLyricsHighlight, 250);
+}
+function stopLyricsSync() { if (_lyricsRaf) { clearInterval(_lyricsRaf); _lyricsRaf = null; } }
+
+function syncLyricsHighlight() {
+  if (!audioEl || !_lyricsLines.length) return;
+  const t = audioEl.currentTime;
+  let active = 0;
+  for (let i = 0; i < _lyricsLines.length; i++) {
+    if (_lyricsLines[i].time <= t) active = i;
+  }
+  const lines = document.querySelectorAll('.lyric-line');
+  lines.forEach((l,i) => {
+    const isActive = i === active;
+    l.classList.toggle('lyric-active', isActive);
+    if (isActive) l.scrollIntoView({ behavior:'smooth', block:'center' });
+  });
+}
+
+// Hook into playTrack to auto-fetch lyrics
+const _origUpdatePlayerUI = window.updatePlayerUI;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// LISTENING STATS
+// ══════════════════════════════════════════════════════════════════════════════
+const STATS_KEY = 'pw_listen_stats';
+
+function getStats() {
+  try { return JSON.parse(localStorage.getItem(STATS_KEY)) || { totalMs:0, plays:{}, firstPlay: Date.now() }; } catch { return { totalMs:0, plays:{}, firstPlay: Date.now() }; }
+}
+function saveStats(s) { try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); } catch {} }
+
+function trackStatPlay(track) {
+  if (!track) return;
+  const s = getStats();
+  const key = track.videoId;
+  if (!s.plays[key]) s.plays[key] = { title: track.title, artist: track.artist, thumbnail: track.thumbnail, count:0, ms:0 };
+  s.plays[key].count++;
+  saveStats(s);
+}
+
+function trackStatListenTime(ms) {
+  const s = getStats();
+  s.totalMs = (s.totalMs||0) + ms;
+  saveStats(s);
+}
+
+// Track listen time every 10s while playing
+setInterval(() => {
+  if (typeof audioEl !== 'undefined' && audioEl && !audioEl.paused) trackStatListenTime(10000);
+}, 10000);
+
+function loadStats() {
+  const view = document.getElementById('view-stats');
+  const s    = getStats();
+  const totalH = Math.floor((s.totalMs||0) / 3600000);
+  const totalM = Math.floor(((s.totalMs||0) % 3600000) / 60000);
+  const plays  = Object.values(s.plays||{}).sort((a,b)=>b.count-a.count);
+  const topArtists = {};
+  plays.forEach(p => { topArtists[p.artist] = (topArtists[p.artist]||0)+p.count; });
+  const artistList = Object.entries(topArtists).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const since = s.firstPlay ? new Date(s.firstPlay).toLocaleDateString('de-DE') : '—';
+
+  view.innerHTML = `
+    <div class="stats-page">
+      <h2 class="section-title">📊 Deine Statistiken</h2>
+      <p style="color:var(--muted);font-size:13px;margin:-8px 0 24px">Seit ${since}</p>
+
+      <div class="stats-hero-row">
+        <div class="stats-hero-card">
+          <div class="stats-hero-num">${totalH}h ${totalM}m</div>
+          <div class="stats-hero-label">Gehört</div>
+        </div>
+        <div class="stats-hero-card">
+          <div class="stats-hero-num">${plays.length}</div>
+          <div class="stats-hero-label">Verschiedene Songs</div>
+        </div>
+        <div class="stats-hero-card">
+          <div class="stats-hero-num">${plays.reduce((a,p)=>a+p.count,0)}</div>
+          <div class="stats-hero-label">Plays gesamt</div>
+        </div>
+      </div>
+
+      <div class="stats-section">
+        <h3 class="section-title" style="font-size:14px">🎵 Top Songs</h3>
+        ${plays.slice(0,10).map((p,i) => `
+          <div class="stats-row">
+            <span class="stats-rank">${i+1}</span>
+            <img src="${esc(p.thumbnail)}" class="stats-thumb" onerror="this.style.display='none'"/>
+            <div class="stats-info">
+              <div class="stats-title">${esc(p.title)}</div>
+              <div class="stats-artist">${esc(p.artist)}</div>
+            </div>
+            <span class="stats-count">${p.count}×</span>
+          </div>`).join('') || '<p style="color:var(--muted);font-size:13px">Noch keine Daten</p>'}
+      </div>
+
+      <div class="stats-section">
+        <h3 class="section-title" style="font-size:14px">🎤 Top Artists</h3>
+        ${artistList.map((a,i) => `
+          <div class="stats-row">
+            <span class="stats-rank">${i+1}</span>
+            <div class="stats-artist-avatar">${esc(a[0][0]||'?').toUpperCase()}</div>
+            <div class="stats-info"><div class="stats-title">${esc(a[0])}</div></div>
+            <span class="stats-count">${a[1]}×</span>
+          </div>`).join('') || '<p style="color:var(--muted);font-size:13px">Noch keine Daten</p>'}
+      </div>
+    </div>`;
 }
