@@ -90,8 +90,9 @@
         if (saved) {
           const session = JSON.parse(saved);
           if (session?.userId && session?.username) {
-            // Valid session found — skip login screen instantly
-            pw.goToApp(session);
+            // Pass cached isPremium so premium survives db.json loss / server outage
+            const isPremiumLocal = localStorage.getItem('pw_isPremium') === '1';
+            pw.goToApp({ ...session, isPremiumLocal });
           }
         }
       } catch {}

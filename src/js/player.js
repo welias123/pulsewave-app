@@ -138,6 +138,7 @@ const AudioEngine = (() => {
 let audioEl = null;
 let queue   = [];
 let queueIdx = -1;
+let _queueStartIdx = 0; // where the user started playing (for stop-at-end logic)
 let isShuffle = false;
 let repeatMode = 0; // 0=off 1=all 2=one
 let isMuted  = false;
@@ -397,7 +398,7 @@ function onEnded() {
 }
 
 async function playTrack(track, queueList, startIdx) {
-  if (queueList) { queue = [...queueList]; queueIdx = startIdx ?? 0; }
+  if (queueList) { queue = [...queueList]; queueIdx = startIdx ?? 0; _queueStartIdx = queueIdx; }
   currentTrack = track;
 
   // Pre-roll ad every 14 min of listening (free users only)
@@ -478,9 +479,16 @@ function updatePlayBtn(playing) {
 
 function nextTrack() {
   if (!queue.length) return;
-  if (isShuffle) { queueIdx = Math.floor(Math.random() * queue.length); }
-  else { queueIdx = (queueIdx + 1) % queue.length; }
-  if (repeatMode === 0 && queueIdx === 0 && !isShuffle) { updatePlayBtn(false); return; }
+  if (isShuffle) {
+    queueIdx = Math.floor(Math.random() * queue.length);
+  } else {
+    queueIdx = (queueIdx + 1) % queue.length;
+    // Stop only when we've played through the whole queue back to where we started
+    if (repeatMode === 0 && queueIdx === _queueStartIdx) {
+      updatePlayBtn(false);
+      return;
+    }
+  }
   playTrack(queue[queueIdx]);
 }
 
