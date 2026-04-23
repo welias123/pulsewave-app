@@ -227,6 +227,14 @@ ipcMain.handle('redeem-code', async (_, { code, userId, username }) => {
   const clean = (code || '').trim().toUpperCase();
   if (!clean) return { ok: false, error: 'Kein Code eingegeben' };
 
+  // Owner code — works offline, always valid
+  if (clean === 'PULSE-OWNER-FREE-2026') {
+    const db = loadDB();
+    const user = db.users.find(u => u.id === userId);
+    if (user) { user.is_premium = true; saveDB(db); }
+    return { ok: true, message: '👑 Owner Premium aktiviert!' };
+  }
+
   // 1. Try server first (5s timeout)
   try {
     const backendUrl = 'https://pulsewave-welias.loca.lt';
