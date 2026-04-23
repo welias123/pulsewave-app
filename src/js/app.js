@@ -207,6 +207,7 @@ async function appRedeemCode() {
     }
     document.getElementById('code-redeem-modal').style.display = 'none';
     _isPremium = true;
+    localStorage.setItem('pw_isPremium', '1');
     initPremium(true);
     showNotif('🎉 ' + (result.message || 'Premium aktiviert!'));
   } catch (e) {
@@ -1498,6 +1499,7 @@ async function confirmCancelSubscription() {
   await pw.cancelPremium({ userId: _userId });
   _isPremium = false;
   window._isPremium = false;
+  localStorage.setItem('pw_isPremium', '0');
   initPremium(false);
   // Re-render settings
   const view = document.getElementById('view-settings');
