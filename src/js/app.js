@@ -2120,7 +2120,7 @@ const LANG_STRINGS = {
   },
 };
 
-let _lang = (() => { try { return localStorage.getItem('pw_lang') || 'de'; } catch { return 'de'; } })();
+let _lang = (() => { try { return localStorage.getItem('pw_lang') || 'en'; } catch { return 'en'; } })();
 
 function toggleLanguage() {
   _lang = _lang === 'de' ? 'en' : 'de';
