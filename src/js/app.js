@@ -479,6 +479,8 @@ window.addEventListener('DOMContentLoaded', () => {
     initPremium(data.isPremium || false);
     await loadPlaylists();
     loadHome();
+    // Build local search index in background (liked + history for instant results)
+    buildLocalIndex();
   });
 
   // Close context menu on click outside
@@ -846,46 +848,134 @@ async function startRadio(idx) {
   showNotif(`📻 ${station.name} — ${tracks.length} Songs geladen!`);
 }
 
+// ── Local Track Index (für sofortige Suchergebnisse) ─────────────────────────
+
+let _localTrackIndex = [];
+
+async function buildLocalIndex() {
+  if (!_userId) return;
+  try {
+    const [history, liked] = await Promise.all([
+      pw.getHistory(_userId),
+      pw.getLikedSongs(_userId),
+    ]);
+    const seen = new Set();
+    _localTrackIndex = [];
+    [...liked, ...history].forEach(s => {
+      if (s.video_id && !seen.has(s.video_id)) {
+        seen.add(s.video_id);
+        _localTrackIndex.push({
+          videoId: s.video_id, title: s.title || '', artist: s.artist || '',
+          thumbnail: s.thumbnail || '', duration: s.duration || '',
+        });
+      }
+    });
+  } catch {}
+}
+
+function searchLocalIndex(q) {
+  if (!q || !_localTrackIndex.length) return [];
+  const qLow = q.toLowerCase();
+  return _localTrackIndex.filter(t =>
+    t.title.toLowerCase().includes(qLow) ||
+    t.artist.toLowerCase().includes(qLow)
+  ).slice(0, 6);
+}
+
 // ── Search ──────────────────────────────────────────────────────────────────
+
+let _lastSearchQ = '';
 
 function onSearchInput() {
   clearTimeout(_searchTimeout);
   const q = document.getElementById('search-input').value.trim();
   if (!q) { renderSearchEmpty(); return; }
+
+  navigate('search', null);
+  const view = document.getElementById('view-search');
+
+  // ── Stage 1: Instant local results (0ms) ──────────────────────────────────
+  const localMatches = searchLocalIndex(q);
+  const localSection = localMatches.length ? `
+    <div class="search-local-section">
+      <div class="search-local-label">Aus deiner Bibliothek</div>
+      <div class="track-list" id="search-local-list">${localMatches.map((t,i) => trackRowHTML(t, i, localMatches)).join('')}</div>
+    </div>` : '';
+
+  view.innerHTML = `
+    <h3 class="section-title" id="search-title">
+      Suche nach "<span style="color:var(--yellow)">${esc(q)}</span>"
+    </h3>
+    ${localSection}
+    <div id="search-yt-section">
+      <div class="track-list">${Array(localMatches.length ? 5 : 8).fill(0).map(() => skeletonRow()).join('')}</div>
+    </div>`;
+
+  if (localMatches.length) {
+    const localListEl = document.getElementById('search-local-list');
+    if (localListEl) bindTrackRows(localListEl, localMatches);
+  }
+
+  // ── Stage 2: Full YouTube search (200ms debounce) ─────────────────────────
+  _lastSearchQ = q;
   document.getElementById('search-spinner').style.display = '';
-  _searchTimeout = setTimeout(() => doSearch(q), 500);
+  _searchTimeout = setTimeout(() => doSearch(q), 200);
 }
 
 function onSearchKey(e) {
   if (e.key === 'Enter') {
     clearTimeout(_searchTimeout);
     const q = e.target.value.trim();
-    if (q) doSearch(q);
+    if (!q) return;
+    _lastSearchQ = q;
+    doSearch(q);
   }
 }
 
 async function doSearch(q) {
-  navigate('search', null);
-  const view = document.getElementById('view-search');
-  view.innerHTML = `<h3 class="section-title">Results for "<span style="color:var(--yellow)">${esc(q)}</span>"</h3>
-    <div class="track-list">${Array(8).fill(0).map(() => skeletonRow()).join('')}</div>`;
-
   const res = await pw.search(q);
   document.getElementById('search-spinner').style.display = 'none';
+
+  // Ignore stale responses if user typed something else
+  if (q !== _lastSearchQ) return;
+
+  const view = document.getElementById('view-search');
+  const ytSection = document.getElementById('search-yt-section');
+  const titleEl   = document.getElementById('search-title');
+
   if (!res.ok || !res.results?.length) {
-    view.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h3>No results found</h3><p>Try a different search term</p></div>`;
+    if (ytSection) {
+      ytSection.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:4px 0">Keine YouTube-Ergebnisse gefunden</p>';
+    } else {
+      view.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><h3>Keine Ergebnisse</h3><p>Versuch einen anderen Begriff</p></div>`;
+    }
     return;
   }
-  view.innerHTML = `<h3 class="section-title">Results for "<span style="color:var(--yellow)">${esc(q)}</span>"<span class="section-sub">${res.results.length} songs</span></h3>
-    <div class="track-list">${res.results.map((t, i) => trackRowHTML(t, i, res.results)).join('')}</div>`;
-  bindTrackRows(view, res.results);
+
+  const sub = `<span class="section-sub">${res.results.length} Songs${res.cached ? ' · sofort' : ''}</span>`;
+
+  if (ytSection) {
+    // Update title
+    if (titleEl) titleEl.innerHTML = `Suche nach "<span style="color:var(--yellow)">${esc(q)}</span>" ${sub}`;
+    // Populate YouTube section (keep local results above)
+    const hasLocal = !!document.querySelector('.search-local-section');
+    ytSection.innerHTML = `
+      ${hasLocal ? '<div class="search-local-label" style="margin-top:8px">YouTube Ergebnisse</div>' : ''}
+      <div class="track-list">${res.results.map((t,i) => trackRowHTML(t, i, res.results)).join('')}</div>`;
+    bindTrackRows(ytSection, res.results);
+  } else {
+    // First-time full render (Enter key path)
+    view.innerHTML = `<h3 class="section-title">Suche nach "<span style="color:var(--yellow)">${esc(q)}</span>" ${sub}</h3>
+      <div class="track-list">${res.results.map((t,i) => trackRowHTML(t, i, res.results)).join('')}</div>`;
+    bindTrackRows(view, res.results);
+  }
 }
 
 function renderSearchEmpty() {
   document.getElementById('view-search').innerHTML = `
     <div class="empty-state">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <h3>Search for music</h3><p>Type an artist, song, or album name</p>
+      <h3>Musik suchen</h3><p>Artist, Song oder Albumnamen eingeben</p>
     </div>`;
 }
 
@@ -1350,7 +1440,7 @@ function _renderSettings(view) {
       </div>
 
       <div style="text-align:center;color:#333;font-size:11px;padding:24px 0">
-        Pulsewave v${typeof appVersion !== 'undefined' ? appVersion : '1.5.25'} · Made with ♥
+        Pulsewave v${typeof appVersion !== 'undefined' ? appVersion : '1.5.26'} · Made with ♥
       </div>
     </div>`;
 }
@@ -1529,10 +1619,11 @@ window.addEventListener('pw-playback-started', startVisualizer);
 // ══════════════════════════════════════════════════════════════════════════════
 // LYRICS (lrclib.net — free, no API key needed)
 // ══════════════════════════════════════════════════════════════════════════════
-let _lyricsTrackId = null;
-let _lyricsVisible = false;
-let _lyricsLines   = [];
-let _lyricsRaf     = null;
+let _lyricsTrackId   = null;
+let _lyricsVisible   = false;
+let _lyricsLines     = [];
+let _lyricsRaf       = null;
+let _lyricsLastActive = -1;
 
 function toggleLyrics() {
   const panel = document.getElementById('lyrics-panel');
@@ -1549,6 +1640,7 @@ function toggleLyrics() {
 async function fetchLyrics(track) {
   if (!track) return;
   _lyricsTrackId = track.videoId;
+  _lyricsLastActive = -1;
   const el = document.getElementById('lyrics-content');
   if (!el) return;
   el.innerHTML = '<p style="color:#555;text-align:center;margin-top:40px">Lädt...</p>';
@@ -1581,7 +1673,8 @@ function renderLyricsLines() {
 
 function startLyricsSync() {
   stopLyricsSync();
-  _lyricsRaf = setInterval(syncLyricsHighlight, 250);
+  _lyricsLastActive = -1;
+  _lyricsRaf = setInterval(syncLyricsHighlight, 150);
 }
 function stopLyricsSync() { if (_lyricsRaf) { clearInterval(_lyricsRaf); _lyricsRaf = null; } }
 
@@ -1592,12 +1685,20 @@ function syncLyricsHighlight() {
   for (let i = 0; i < _lyricsLines.length; i++) {
     if (_lyricsLines[i].time <= t) active = i;
   }
+  // Only update DOM when the active line actually changes
+  if (active === _lyricsLastActive) return;
+  _lyricsLastActive = active;
+
   const lines = document.querySelectorAll('.lyric-line');
-  lines.forEach((l,i) => {
-    const isActive = i === active;
-    l.classList.toggle('lyric-active', isActive);
-    if (isActive) l.scrollIntoView({ behavior:'smooth', block:'center' });
-  });
+  lines.forEach((l, i) => l.classList.toggle('lyric-active', i === active));
+
+  // Smooth scroll: manually scroll the container instead of scrollIntoView (no jitter)
+  const container = document.getElementById('lyrics-content');
+  const activeLine = lines[active];
+  if (container && activeLine) {
+    const targetScroll = activeLine.offsetTop - container.clientHeight / 2 + activeLine.offsetHeight / 2;
+    container.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+  }
 }
 
 // Hook into playTrack to auto-fetch lyrics
