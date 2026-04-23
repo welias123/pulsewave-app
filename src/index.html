@@ -258,6 +258,38 @@
   <div id="lyrics-content" class="lyrics-content"><p style="color:#555;text-align:center;margin-top:40px">Wähle einen Song um Lyrics zu laden</p></div>
 </div>
 
+<!-- Now Playing Fullscreen Overlay -->
+<div id="np-overlay" class="np-overlay" style="display:none" onclick="closeNowPlaying()">
+  <div class="np-bg" id="np-bg"></div>
+  <div class="np-content" onclick="event.stopPropagation()">
+    <button class="np-close-btn" onclick="closeNowPlaying()">✕</button>
+    <img id="np-art-large" class="np-art-large" src="" alt=""/>
+    <div class="np-info">
+      <div class="np-title" id="np-title-large">—</div>
+      <div class="np-artist" id="np-artist-large">—</div>
+    </div>
+    <div class="np-progress-area">
+      <span id="np-cur" class="np-time">0:00</span>
+      <div class="np-bar" id="np-bar" onclick="npSeek(event)">
+        <div class="np-bar-fill" id="np-bar-fill"></div>
+      </div>
+      <span id="np-total" class="np-time">0:00</span>
+    </div>
+    <div class="np-controls">
+      <button class="np-btn" onclick="prevTrack()">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><polygon points="19 20 9 12 19 4"/><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2"/></svg>
+      </button>
+      <button class="np-btn np-play-btn" id="np-play-btn" onclick="togglePlay()">
+        <svg id="np-icon-play"  viewBox="0 0 24 24" fill="currentColor" width="28" height="28"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        <svg id="np-icon-pause" viewBox="0 0 24 24" fill="currentColor" width="28" height="28" style="display:none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      </button>
+      <button class="np-btn" onclick="nextTrack()">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22"><polygon points="5 4 15 12 5 20"/><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Queue Panel -->
 <div id="queue-panel" class="queue-panel" style="display:none">
   <div class="queue-header">
@@ -272,7 +304,7 @@
 <canvas id="visualizer-canvas" class="visualizer-canvas" style="display:none"></canvas>
   <!-- Track info -->
   <div class="player-track">
-    <img id="player-art" src="" alt="" class="player-art" style="opacity:0"/>
+    <img id="player-art" src="" alt="" class="player-art" style="opacity:0;cursor:pointer" onclick="openNowPlaying()" title="Vollbild"/>
     <div class="player-meta">
       <span id="player-title" class="player-title">—</span>
       <span id="player-artist" class="player-artist">Select a song to play</span>

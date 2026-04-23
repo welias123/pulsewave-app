@@ -511,7 +511,11 @@ function navigate(view, el) {
   else if (view === 'radio')    { loadRadio(); }
   else if (view === 'settings') { loadSettings(); }
   else if (view === 'stats')    { loadStats(); }
-  else if (view === 'home')    { loadHome(); }
+  else if (view === 'home') {
+    // Only reload if home is empty or cache expired
+    const homeView = document.getElementById('view-home');
+    if (!homeView || !homeView.querySelector('.home-section')) loadHome();
+  }
 }
 
 function navigateToPlaylist(playlistId) {
@@ -1175,15 +1179,23 @@ function trackCtxMenu(e, track, allTracks, idx, opts = {}) {
   e.preventDefault(); e.stopPropagation();
   _ctxTrack = track;
   const items = [
-    { label: '▶ Play',            action: () => playTrack(track, allTracks, idx) },
-    { label: '⏭ Play Next',       action: () => { queue.splice(queueIdx + 1, 0, track); showNotif('Added to queue'); } },
+    { label: '▶  Abspielen',          action: () => playTrack(track, allTracks, idx) },
+    { label: '⏭  Als nächstes',       action: () => { queue.splice(queueIdx + 1, 0, track); if (_queueVisible) renderQueue(); showNotif('⏭ Als nächstes in Warteschlange'); } },
     { sep: true },
-    { label: '♥ Add to Liked',    action: () => pw.toggleLike({ userId: _userId, track }).then(() => refreshLikedView()) },
-    { label: '＋ Add to Playlist', action: () => openAddToPlaylistModal(track) },
+    { label: '🎤  Zum Artist',         action: () => openArtistPage(track.artist) },
+    { sep: true },
+    { label: '♥  Liken',              action: () => pw.toggleLike({ userId: _userId, track }).then(() => { refreshLikedView(); buildLocalIndex(); }) },
+    { label: '＋  Zu Playlist',        action: () => openAddToPlaylistModal(track) },
+    { sep: true },
+    { label: '🔗  Link kopieren',      action: () => {
+        navigator.clipboard.writeText(`https://www.youtube.com/watch?v=${track.videoId}`);
+        showNotif('🔗 YouTube-Link kopiert!');
+      }
+    },
   ];
   if (opts.showRemove) {
     items.push({ sep: true });
-    items.push({ label: '✕ Remove from Playlist', danger: true,
+    items.push({ label: '✕  Aus Playlist entfernen', danger: true,
       action: async () => { await pw.removeFromPlaylist({ playlistId: opts.showRemove, videoId: track.videoId }); loadPlaylistView(opts.showRemove); }
     });
   }
@@ -1440,7 +1452,7 @@ function _renderSettings(view) {
       </div>
 
       <div style="text-align:center;color:#333;font-size:11px;padding:24px 0">
-        Pulsewave v${typeof appVersion !== 'undefined' ? appVersion : '1.5.26'} · Made with ♥
+        Pulsewave v${typeof appVersion !== 'undefined' ? appVersion : '1.5.27'} · Made with ♥
       </div>
     </div>`;
 }
@@ -1550,6 +1562,7 @@ function skeletonRow() {
 document.addEventListener('keydown', e => {
   const tag = document.activeElement?.tagName;
   if (tag === 'INPUT' || tag === 'TEXTAREA') return; // don't capture while typing
+  if (e.code === 'Escape' && _npOpen) { closeNowPlaying(); return; }
   switch(e.code) {
     case 'Space':      e.preventDefault(); togglePlay(); break;
     case 'ArrowRight': e.preventDefault(); if (e.shiftKey) nextTrack(); else if(audioEl) audioEl.currentTime = Math.min(audioEl.duration||0, audioEl.currentTime+10); break;
@@ -1790,6 +1803,86 @@ function loadStats() {
           </div>`).join('') || '<p style="color:var(--muted);font-size:13px">Noch keine Daten</p>'}
       </div>
     </div>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// NOW PLAYING FULLSCREEN
+// ══════════════════════════════════════════════════════════════════════════════
+
+let _npOpen = false;
+let _npRaf  = null;
+
+function openNowPlaying() {
+  if (!currentTrack) return;
+  _npOpen = true;
+  const overlay = document.getElementById('np-overlay');
+  overlay.style.display = 'flex';
+
+  // Set blurred background from album art
+  const bg = document.getElementById('np-bg');
+  if (currentTrack.thumbnail) {
+    bg.style.backgroundImage = `url(${currentTrack.thumbnail})`;
+    bg.style.backgroundSize  = 'cover';
+    bg.style.backgroundPosition = 'center';
+    bg.style.filter = 'blur(80px) brightness(.3)';
+  }
+
+  // Fill info
+  document.getElementById('np-art-large').src      = currentTrack.thumbnail || '';
+  document.getElementById('np-title-large').textContent  = currentTrack.title  || '—';
+  document.getElementById('np-artist-large').textContent = currentTrack.artist || '—';
+  document.getElementById('np-artist-large').onclick = () => { closeNowPlaying(); openArtistPage(currentTrack.artist); };
+  document.getElementById('np-total').textContent = fmtTime(audioEl?.duration) || currentTrack.duration || '0:00';
+
+  // Sync play/pause icons
+  _npSyncPlayBtn();
+
+  // Start progress update loop
+  _npRaf = setInterval(_npUpdateProgress, 500);
+}
+
+function closeNowPlaying() {
+  _npOpen = false;
+  document.getElementById('np-overlay').style.display = 'none';
+  if (_npRaf) { clearInterval(_npRaf); _npRaf = null; }
+}
+
+function _npUpdateProgress() {
+  if (!audioEl || !_npOpen) return;
+  const pct = audioEl.duration ? (audioEl.currentTime / audioEl.duration * 100) : 0;
+  const fill = document.getElementById('np-bar-fill');
+  const cur  = document.getElementById('np-cur');
+  const tot  = document.getElementById('np-total');
+  if (fill) fill.style.width = pct + '%';
+  if (cur)  cur.textContent  = fmtTime(audioEl.currentTime);
+  if (tot)  tot.textContent  = fmtTime(audioEl.duration);
+  _npSyncPlayBtn();
+}
+
+function _npSyncPlayBtn() {
+  const isPlaying = audioEl && !audioEl.paused;
+  const pi = document.getElementById('np-icon-play');
+  const pa = document.getElementById('np-icon-pause');
+  if (pi) pi.style.display  = isPlaying ? 'none' : '';
+  if (pa) pa.style.display  = isPlaying ? '' : 'none';
+}
+
+function npSeek(e) {
+  if (!audioEl?.duration) return;
+  const bar  = document.getElementById('np-bar');
+  const rect = bar.getBoundingClientRect();
+  const pct  = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  audioEl.currentTime = pct * audioEl.duration;
+}
+
+// Update Now Playing overlay when song changes
+function _npRefresh(track) {
+  if (!_npOpen || !track) return;
+  document.getElementById('np-art-large').src = track.thumbnail || '';
+  document.getElementById('np-title-large').textContent  = track.title  || '—';
+  document.getElementById('np-artist-large').textContent = track.artist || '—';
+  const bg = document.getElementById('np-bg');
+  if (track.thumbnail) bg.style.backgroundImage = `url(${track.thumbnail})`;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

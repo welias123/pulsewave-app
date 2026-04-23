@@ -431,6 +431,8 @@ async function playTrack(track, queueList, startIdx) {
     if (typeof _lyricsVisible !== 'undefined' && _lyricsVisible) fetchLyrics(track);
     // Refresh queue panel if open
     if (typeof _queueVisible !== 'undefined' && _queueVisible && typeof renderQueue === 'function') renderQueue();
+    // Refresh Now Playing overlay if open
+    if (typeof _npRefresh === 'function') _npRefresh(track);
     // Discord Rich Presence
     if (typeof pw !== 'undefined' && pw.discordUpdate) pw.discordUpdate(track);
     // Mini Player — update if open
