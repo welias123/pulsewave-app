@@ -6,8 +6,8 @@ const crypto = require('crypto');
 const { autoUpdater } = require('electron-updater');
 
 // ── Auto-updater config ───────────────────────────────────────────────────
-autoUpdater.autoDownload        = true;   // download silently in background
-autoUpdater.autoInstallOnAppQuit = false;  // let user choose when to restart
+autoUpdater.autoDownload         = true;   // download silently in background
+autoUpdater.autoInstallOnAppQuit = true;   // also install when user closes the app
 
 autoUpdater.on('update-available', (info) => {
   if (mainWindow) mainWindow.webContents.send('update-available', info.version);

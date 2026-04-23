@@ -497,6 +497,39 @@ window.addEventListener('DOMContentLoaded', () => {
     buildLocalIndex();
   });
 
+  // ── Auto-updater notifications ────────────────────────────────────────────
+  pw.onUpdateAvailable((version) => {
+    showNotif(`⬇️ Update v${version} wird heruntergeladen…`);
+  });
+  pw.onUpdateDownloaded((version) => {
+    // Show persistent install banner
+    const existing = document.getElementById('update-banner');
+    if (existing) return;
+    const banner = document.createElement('div');
+    banner.id = 'update-banner';
+    banner.style.cssText = `
+      position:fixed;bottom:90px;right:20px;z-index:9999;
+      background:#1a1a1a;border:1.5px solid var(--yellow);border-radius:14px;
+      padding:14px 18px;display:flex;align-items:center;gap:12px;
+      box-shadow:0 8px 32px rgba(0,0,0,.6);animation:slideUp .3s ease;
+    `;
+    banner.innerHTML = `
+      <div style="font-size:22px">🎉</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:#fff">Pulsewave v${version} ready</div>
+        <div style="font-size:11px;color:#888;margin-top:2px">Restart to apply the update</div>
+      </div>
+      <button onclick="pw.installUpdate()" style="
+        background:var(--yellow);color:#000;border:none;border-radius:8px;
+        padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;
+      ">Restart & Update</button>
+      <button onclick="document.getElementById('update-banner').remove()" style="
+        background:none;border:none;color:#555;cursor:pointer;font-size:18px;padding:2px 6px;
+      ">✕</button>
+    `;
+    document.body.appendChild(banner);
+  });
+
   // Close context menu on click outside
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#ctx-menu')) hideCtxMenu();
