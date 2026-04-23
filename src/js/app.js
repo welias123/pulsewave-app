@@ -484,7 +484,8 @@ window.addEventListener('DOMContentLoaded', () => {
     window._authToken = data.token || null;
     // Persist so next startup pre-populates instantly
     localStorage.setItem('pw_username', _username);
-    localStorage.setItem('pw_isPremium', data.isPremium ? '1' : '0');
+    // Only upgrade to premium — never downgrade on startup (explicit cancel does that)
+    if (data.isPremium) localStorage.setItem('pw_isPremium', '1');
     document.getElementById('user-name').textContent   = _username || 'User';
     document.getElementById('user-avatar').textContent = (_username || 'U')[0].toUpperCase();
     document.getElementById('user-avatar').style.background = 'var(--yellow)';

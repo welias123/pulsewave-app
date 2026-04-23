@@ -163,13 +163,42 @@ function verifyPassword(password, stored) {
   return check === hash;
 }
 
+// ── Input validation ──────────────────────────────────────────────────────────
+// TODO (Oracle migration): replace db.users lookups below with SQL queries:
+//   SELECT id FROM users WHERE LOWER(username) = LOWER(:username)
+//   INSERT INTO users (username, password_hash, is_premium, created_at) VALUES (...)
+//   All redeemed code hashes → table: redeemed_codes (code_hash, used_by, used_at)
+//   Connection: oracledb.getConnection({ user, password, connectString: 'host/service' })
+function validateUsername(username) {
+  if (!username || typeof username !== 'string') return 'Username required';
+  const u = username.trim();
+  if (u.length < 3)  return 'Username must be at least 3 characters';
+  if (u.length > 20) return 'Username must be 20 characters or less';
+  if (!/^[a-zA-Z0-9_]+$/.test(u)) return 'Username can only contain letters, numbers and _';
+  return null; // valid
+}
+function validatePassword(password) {
+  if (!password || typeof password !== 'string') return 'Password required';
+  if (password.length < 6)  return 'Password must be at least 6 characters';
+  if (password.length > 64) return 'Password must be 64 characters or less';
+  return null; // valid
+}
+
 ipcMain.handle('auth-register', (_, { username, password }) => {
+  const uErr = validateUsername(username);
+  if (uErr) return { ok: false, error: uErr };
+  const pErr = validatePassword(password);
+  if (pErr) return { ok: false, error: pErr };
+
   const db = loadDB();
-  if (db.users.find(u => u.username === username)) return { ok: false, error: 'Username already taken' };
-  const user = { id: nextId(db.users), username, passwordHash: hashPassword(password), is_premium: false, created_at: new Date().toISOString() };
+  // TODO (Oracle): SELECT COUNT(*) FROM users WHERE LOWER(username) = LOWER(:username)
+  if (db.users.find(u => u.username.toLowerCase() === username.trim().toLowerCase()))
+    return { ok: false, error: 'Username already taken' };
+
+  const user = { id: nextId(db.users), username: username.trim(), passwordHash: hashPassword(password), is_premium: false, created_at: new Date().toISOString() };
   db.users.push(user);
   saveDB(db);
-  return { ok: true, userId: user.id, username };
+  return { ok: true, userId: user.id, username: user.username };
 });
 
 // ── Premium code redemption ───────────────────────────────────────────────
@@ -278,6 +307,8 @@ ipcMain.handle('redeem-code', async (_, { code, userId, username }) => {
 
   // 2. Local fallback: compare hash of entered code against stored hashes
   const inputHash = hashCode(clean);
+  // TODO (Oracle): SELECT * FROM redeemed_codes WHERE code_hash = :inputHash
+  //                INSERT INTO redeemed_codes (code_hash, used_by, used_at) VALUES (...)
   const lc = loadLocalCodes();
   const entry = lc.find(c => c.codeHash === inputHash || c.code === clean); // legacy compat
   if (!entry) return { ok: false, error: 'Ungültiger Code' };
@@ -292,7 +323,8 @@ ipcMain.handle('redeem-code', async (_, { code, userId, username }) => {
 
 ipcMain.handle('auth-login', (_, { username, password }) => {
   const db = loadDB();
-  const user = db.users.find(u => u.username === username);
+  // TODO (Oracle): SELECT * FROM users WHERE LOWER(username) = LOWER(:username)
+  const user = db.users.find(u => u.username.toLowerCase() === (username || '').toLowerCase());
   if (!user) return { ok: false, error: 'Invalid credentials' };
   // Support both legacy plaintext and new PBKDF2 hash
   const stored = user.passwordHash || user.password || '';
