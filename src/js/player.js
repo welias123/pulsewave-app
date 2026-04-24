@@ -139,12 +139,68 @@ let audioEl = null;
 let queue   = [];
 let queueIdx = -1;
 let _queueStartIdx = 0; // where the user started playing (for stop-at-end logic)
+let _gapless = { audio: null, track: null, idx: -1, ready: false };
+let _gaplessScheduled = false;
 let isShuffle = false;
 let repeatMode = 0; // 0=off 1=all 2=one
 let isMuted  = false;
 let prevVol  = 80;
 let isDragging = false;
 let currentTrack = null;
+
+function _quality() { try { return localStorage.getItem('pw_quality') || 'best'; } catch { return 'best'; } }
+
+async function _preloadNextGapless() {
+  if (!window._gaplessEnabled || !queue.length) return;
+  const nextIdx = isShuffle
+    ? Math.floor(Math.random() * queue.length)
+    : (queueIdx + 1) % queue.length;
+  if (repeatMode === 0 && nextIdx === _queueStartIdx) return;
+  const nt = queue[nextIdx];
+  if (!nt) return;
+  try {
+    const res = await pw.getStreamUrl(nt.videoId, _quality());
+    if (!res.ok) return;
+    const a = new Audio();
+    a.src = res.url;
+    a.volume = audioEl ? audioEl.volume : 0.8;
+    a.crossOrigin = 'anonymous';
+    a.preload = 'auto';
+    _gapless = { audio: a, track: nt, idx: nextIdx, ready: true };
+  } catch {}
+}
+
+function _doGaplessSwitch() {
+  const { audio, track, idx } = _gapless;
+  _gapless = { audio: null, track: null, idx: -1, ready: false };
+  _gaplessScheduled = false;
+  if (repeatMode === 0 && idx === _queueStartIdx) { updatePlayBtn(false); return; }
+  queueIdx = idx;
+  currentTrack = track;
+  if (audioEl) { audioEl.pause(); audioEl.src = ''; }
+  audioEl = audio;
+  AudioEngine.init(audioEl);
+  updatePlayerUI(track);
+  updatePlayBtn(true);
+  audioEl.play().catch(() => nextTrack());
+  audioEl.addEventListener('timeupdate', onTimeUpdate);
+  audioEl.addEventListener('ended', onEnded);
+  audioEl.addEventListener('loadedmetadata', () => {
+    document.getElementById('time-total').textContent = fmtTime(audioEl.duration);
+  });
+  audioEl.addEventListener('error', () => { showNotif('Stream error — trying next track…'); setTimeout(nextTrack, 1500); });
+  audioEl.addEventListener('waiting', () => document.getElementById('btn-play')?.classList.add('buffering'));
+  audioEl.addEventListener('playing', () => document.getElementById('btn-play')?.classList.remove('buffering'));
+  document.querySelectorAll('.track-row').forEach(r => r.classList.remove('playing'));
+  document.querySelectorAll(`.track-row[data-vid="${track.videoId}"]`).forEach(r => r.classList.add('playing'));
+  if (window._userId) pw.addToHistory({ userId: window._userId, track });
+  if (window._userId) pw.isLiked({ userId: window._userId, videoId: track.videoId }).then(liked => { if (typeof setLikeBtnState === 'function') setLikeBtnState(liked); });
+  if (typeof _npRefresh === 'function') _npRefresh(track);
+  if (typeof _queueVisible !== 'undefined' && _queueVisible && typeof renderQueue === 'function') renderQueue();
+  if (typeof pw !== 'undefined' && pw.discordUpdate) pw.discordUpdate(track);
+  if (typeof pw !== 'undefined' && pw.miniTrackUpdate) pw.miniTrackUpdate({ ...track, playing: true });
+  if (typeof trackStatPlay === 'function') trackStatPlay(track);
+}
 
 let eqValues = [0, 0, 0, 0, 0, 0, 0];
 
@@ -180,7 +236,7 @@ async function doCrossfade() {
   if (!nextTrackObj) return;
 
   // Get stream URL for next track
-  const res = await pw.getStreamUrl(nextTrackObj.videoId);
+  const res = await pw.getStreamUrl(nextTrackObj.videoId, _quality());
   if (!res.ok) return;
 
   // Fade out current audio
@@ -390,16 +446,30 @@ function onTimeUpdate() {
   document.getElementById('progress-fill').style.width = pct + '%';
   document.getElementById('progress-thumb').style.left = pct + '%';
   document.getElementById('time-cur').textContent = fmtTime(audioEl.currentTime);
+  // Gapless: preload next track when 20 seconds remain
+  if (window._gaplessEnabled && audioEl.duration && !_gaplessScheduled &&
+      (audioEl.duration - audioEl.currentTime) < 20) {
+    _gaplessScheduled = true;
+    _preloadNextGapless();
+  }
 }
 
 function onEnded() {
   if (repeatMode === 2) { audioEl.currentTime = 0; AudioEngine.play(); return; }
-  nextTrack();
+  if (window._gaplessEnabled && _gapless.ready) {
+    _doGaplessSwitch();
+  } else {
+    nextTrack();
+  }
 }
 
 async function playTrack(track, queueList, startIdx) {
   if (queueList) { queue = [...queueList]; queueIdx = startIdx ?? 0; _queueStartIdx = queueIdx; }
   currentTrack = track;
+
+  // Reset gapless preload when user picks a new track
+  _gapless = { audio: null, track: null, idx: -1, ready: false };
+  _gaplessScheduled = false;
 
   // Pre-roll ad every 14 min of listening (free users only)
   _songsPlayed++;
@@ -417,7 +487,7 @@ async function playTrack(track, queueList, startIdx) {
   document.querySelectorAll(`.track-row[data-vid="${track.videoId}"]`).forEach(r => r.classList.add('playing'));
 
   try {
-    const res = await pw.getStreamUrl(track.videoId);
+    const res = await pw.getStreamUrl(track.videoId, _quality());
     if (!res.ok) { showNotif('Could not get stream: ' + res.error); return; }
     audioEl.src = res.url;
     await AudioEngine.play();

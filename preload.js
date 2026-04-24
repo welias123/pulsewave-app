@@ -15,7 +15,7 @@ contextBridge.exposeInMainWorld('pw', {
 
   // Music
   search:       (q)    => ipcRenderer.invoke('search-music', q),
-  getStreamUrl: (id)   => ipcRenderer.invoke('get-stream-url', id),
+  getStreamUrl: (id, quality) => ipcRenderer.invoke('get-stream-url', { videoId: id, quality: quality || 'best' }),
 
   // Playlists
   getPlaylists:       (uid)  => ipcRenderer.invoke('get-playlists', uid),
@@ -25,6 +25,11 @@ contextBridge.exposeInMainWorld('pw', {
   getPlaylistTracks:  (id)   => ipcRenderer.invoke('get-playlist-tracks', id),
   addToPlaylist:      (d)    => ipcRenderer.invoke('add-to-playlist', d),
   removeFromPlaylist: (d)    => ipcRenderer.invoke('remove-from-playlist', d),
+
+  // Community Playlists
+  getPublicPlaylists:    (q)  => ipcRenderer.invoke('get-public-playlists', q),
+  togglePlaylistPublic:  (d)  => ipcRenderer.invoke('toggle-playlist-public', d),
+  saveCommunityPlaylist: (d)  => ipcRenderer.invoke('save-community-playlist', d),
 
   // Likes
   getLikedSongs: (uid)  => ipcRenderer.invoke('get-liked-songs', uid),

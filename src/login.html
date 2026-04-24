@@ -67,7 +67,13 @@
         </div>
         <div class="field">
           <label>Password</label>
-          <input type="password" id="reg-pass" placeholder="Choose a password" autocomplete="new-password" required/>
+          <input type="password" id="reg-pass" placeholder="Choose a password" autocomplete="new-password" required oninput="checkStrength(this.value)"/>
+          <div id="strength-wrap" style="display:none;margin-top:6px">
+            <div style="height:3px;background:#1a1a1a;border-radius:2px;overflow:hidden">
+              <div id="strength-bar" style="height:100%;width:0%;border-radius:2px;transition:width .25s,background .25s"></div>
+            </div>
+            <div id="strength-label" style="font-size:11px;margin-top:4px;color:#666"></div>
+          </div>
         </div>
         <div class="field">
           <label>Confirm Password</label>
@@ -128,6 +134,29 @@
       }
     }
 
+    function checkStrength(p) {
+      const wrap = document.getElementById('strength-wrap');
+      const bar  = document.getElementById('strength-bar');
+      const lbl  = document.getElementById('strength-label');
+      if (!p) { wrap.style.display = 'none'; return; }
+      wrap.style.display = 'block';
+      let s = 0;
+      if (p.length >= 6)  s++;
+      if (p.length >= 10) s++;
+      if (/[A-Z]/.test(p)) s++;
+      if (/[0-9]/.test(p)) s++;
+      if (/[^a-zA-Z0-9]/.test(p)) s++;
+      const lvl = [
+        { w:'20%', c:'#ef4444', t:'Very weak' },
+        { w:'40%', c:'#f97316', t:'Weak' },
+        { w:'60%', c:'#eab308', t:'Fair' },
+        { w:'80%', c:'#22c55e', t:'Strong' },
+        { w:'100%',c:'#16a34a', t:'Very strong' },
+      ][Math.max(0, s - 1)];
+      bar.style.width = lvl.w; bar.style.background = lvl.c;
+      lbl.style.color = lvl.c; lbl.textContent = lvl.t;
+    }
+
     async function handleRegister(e) {
       e.preventDefault();
       const btn = e.target.querySelector('button[type=submit]');
@@ -136,7 +165,7 @@
       const pass  = document.getElementById('reg-pass').value;
       const pass2 = document.getElementById('reg-pass2').value;
       if (pass !== pass2) { err.textContent = 'Passwords do not match'; return; }
-      if (pass.length < 4) { err.textContent = 'Password must be at least 4 characters'; return; }
+      if (pass.length < 6) { err.textContent = 'Password must be at least 6 characters'; return; }
       btn.disabled = true;
       const r = await pw.register({
         username: document.getElementById('reg-user').value.trim(),

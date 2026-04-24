@@ -466,6 +466,7 @@ const RADIO_STATIONS = [
 // ── Boot ───────────────────────────────────────────────────────────────────
 
 window.addEventListener('DOMContentLoaded', () => {
+  window._gaplessEnabled = localStorage.getItem('pw_gapless') !== '0'; // default on
   initPlayer();
 
   // Instantly restore username from localStorage so the UI never shows "User"/"?"
@@ -772,6 +773,14 @@ function loadBrowse() {
   view.innerHTML = `
     <h2 class="section-title">Browse</h2>
     <p style="color:var(--muted);font-size:14px;margin:-8px 0 24px">Wähle ein Genre und entdecke Musik</p>
+    <div class="community-browse-banner" onclick="openCommunityPlaylists()" style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #2a2a4a;border-radius:16px;padding:20px 24px;display:flex;align-items:center;gap:16px;cursor:pointer;margin-bottom:24px;transition:border-color .15s">
+      <div style="font-size:36px">🌍</div>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#fff">Community Playlists</div>
+        <div style="font-size:12px;color:#888;margin-top:2px">Discover and save playlists from other users</div>
+      </div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" width="16" height="16" style="margin-left:auto"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
     <div class="genre-grid">
       ${GENRES.map(g=>`
         <div class="genre-tile" style="background:${g.color}" onclick="openGenre('${esc(g.name)}','${esc(g.query)}')">
@@ -779,6 +788,62 @@ function loadBrowse() {
           <div class="genre-tile-name">${g.name}</div>
         </div>`).join('')}
     </div>`;
+}
+
+// ── Community Playlists ──────────────────────────────────────────────────────
+
+async function openCommunityPlaylists() {
+  document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+  const view = document.getElementById('view-community');
+  if (view) { view.style.display = 'block'; loadCommunity(''); }
+}
+
+async function loadCommunity(query) {
+  const view = document.getElementById('view-community');
+  if (!view) return;
+  view.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button onclick="navigate('browse',null)" style="background:none;border:none;color:#888;cursor:pointer;font-size:13px">← Browse</button>
+      <h2 class="section-title" style="margin:0">🌍 Community Playlists</h2>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      <input id="community-search" type="text" placeholder="Search playlists or users…"
+        value="${esc(query)}"
+        oninput="loadCommunity(this.value)"
+        style="flex:1;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;padding:10px 14px;color:#fff;font-size:13px;outline:none"/>
+    </div>
+    <div id="community-list"><div class="loading-spinner" style="margin:40px auto"></div></div>`;
+  const results = await pw.getPublicPlaylists(query);
+  const list = document.getElementById('community-list');
+  if (!list) return;
+  if (!results.length) {
+    list.innerHTML = '<div class="empty-state"><h3>No public playlists yet</h3><p>Make your playlists public to share them with others</p></div>';
+    return;
+  }
+  list.innerHTML = results.map(pl => `
+    <div class="community-playlist-card">
+      <div class="community-playlist-icon">🎵</div>
+      <div class="community-playlist-info">
+        <div class="community-playlist-name">${esc(pl.name)}</div>
+        <div class="community-playlist-meta">by <strong>${esc(pl.owner_username || 'Unknown')}</strong> · ${pl.trackCount} songs</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="community-save-btn" onclick="saveCommunityPlaylist(${pl.id})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Save
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+async function saveCommunityPlaylist(playlistId) {
+  const result = await pw.saveCommunityPlaylist({ playlistId, userId: _userId, username: _username });
+  if (result.ok) {
+    showNotif('✅ Playlist saved to your library!');
+    await loadPlaylists();
+  } else {
+    showNotif('❌ ' + (result.error || 'Could not save playlist'));
+  }
 }
 
 async function openGenre(name, query) {
@@ -1102,6 +1167,9 @@ async function loadPlaylistView(playlistId) {
             <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             Play All
           </button>
+          <button class="btn-icon" onclick="togglePlaylistPublicUI(${playlistId}, this)" style="background:rgba(255,255,255,.07);border-radius:8px;font-size:11px;padding:6px 10px" title="${pl.public ? 'Make private' : 'Make public'}">
+            ${pl.public ? '🌍 Public' : '🔒 Private'}
+          </button>
           <button class="btn-icon" onclick="showPlaylistMenu(event,${playlistId})" style="background:rgba(255,255,255,.07);border-radius:8px">
             <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
           </button>
@@ -1135,6 +1203,15 @@ async function deletePlaylist(playlistId) {
   await loadPlaylists();
   navigate('home', document.querySelector('.nav-item'));
   showNotif('Playlist deleted');
+}
+
+async function togglePlaylistPublicUI(playlistId, btn) {
+  const result = await pw.togglePlaylistPublic({ playlistId, userId: _userId, username: _username });
+  if (result.ok) {
+    btn.textContent = result.public ? '🌍 Public' : '🔒 Private';
+    btn.title = result.public ? 'Make private' : 'Make public';
+    showNotif(result.public ? '🌍 Playlist is now public' : '🔒 Playlist is now private');
+  }
 }
 
 function renamePlaylistPrompt(playlistId) {
@@ -1183,7 +1260,7 @@ async function confirmCreatePlaylist() {
     await pw.renamePlaylist({ playlistId: renameId, name });
     delete modal.dataset.renameId;
   } else {
-    await pw.createPlaylist({ userId: _userId, name });
+    await pw.createPlaylist({ userId: _userId, name, username: _username });
   }
   await loadPlaylists();
   closeModal('modal-cpl');
@@ -1432,6 +1509,17 @@ function _renderSettings(view) {
 
         <div class="settings-row settings-row-toggle">
           <div>
+            <div class="settings-row-label">Gapless Playback</div>
+            <div class="settings-row-sub">Preloads next track — no silence between songs</div>
+          </div>
+          <label class="settings-toggle">
+            <input type="checkbox" ${(localStorage.getItem('pw_gapless') !== '0') ? 'checked' : ''} onchange="toggleGapless(this.checked)"/>
+            <span class="settings-toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-row settings-row-toggle">
+          <div>
             <div class="settings-row-label">Crossfade ${!isPrem ? '<span class="settings-premium-lock">⭐ Premium</span>' : ''}</div>
             <div class="settings-row-sub">Sanfter Übergang zwischen Songs (4 Sekunden)</div>
           </div>
@@ -1451,10 +1539,14 @@ function _renderSettings(view) {
 
         <div class="settings-row">
           <div>
-            <div class="settings-row-label">Audioqualität</div>
-            <div class="settings-row-sub">Beste verfügbare Qualität (AAC / Opus, bis 320 kbps)</div>
+            <div class="settings-row-label">Audio Quality</div>
+            <div class="settings-row-sub">Higher = better sound, slightly more data</div>
           </div>
-          <span class="settings-badge-blue">Sehr hoch</span>
+          <select onchange="setAudioQuality(this.value)" style="background:#1a1a1a;color:#fff;border:1px solid #333;border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer">
+            <option value="best" ${(localStorage.getItem('pw_quality')||'best')==='best'?'selected':''}>Best (320k)</option>
+            <option value="256" ${localStorage.getItem('pw_quality')==='256'?'selected':''}>High (256k)</option>
+            <option value="128" ${localStorage.getItem('pw_quality')==='128'?'selected':''}>Normal (128k)</option>
+          </select>
         </div>
       </div>
 
@@ -1514,6 +1606,17 @@ function toggleNormalization(enabled) {
   if (typeof AudioEngine !== 'undefined') AudioEngine.setNormalization(enabled);
   try { localStorage.setItem('pw_norm', enabled ? '1' : '0'); } catch {}
   showNotif(enabled ? '🎚️ Normalisierung aktiviert' : '🎚️ Normalisierung deaktiviert');
+}
+
+function setAudioQuality(q) {
+  localStorage.setItem('pw_quality', q);
+  showNotif('🎵 Audio quality updated — takes effect on next song');
+}
+
+function toggleGapless(enabled) {
+  window._gaplessEnabled = enabled;
+  localStorage.setItem('pw_gapless', enabled ? '1' : '0');
+  showNotif(enabled ? '⚡ Gapless playback on' : '⚡ Gapless playback off');
 }
 
 function toggleCrossfadeSettings(enabled) {

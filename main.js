@@ -407,14 +407,19 @@ ipcMain.handle('search-music', (_, query) => new Promise(resolve => {
 }));
 
 // ── Stream URL ────────────────────────────────────────────────────────────
-ipcMain.handle('get-stream-url', (_, videoId) => new Promise(resolve => {
+ipcMain.handle('get-stream-url', (_, arg) => new Promise(resolve => {
+  const videoId = typeof arg === 'string' ? arg : arg?.videoId;
+  const quality = typeof arg === 'object' ? (arg?.quality || 'best') : 'best';
   const bin = ytdlp();
   if (!fs.existsSync(bin)) { resolve({ ok: false, error: 'yt-dlp not found' }); return; }
-  // FIX POC2: validate videoId before use — real YouTube IDs are always 11 chars [a-zA-Z0-9_-]
   const VALID_VID = /^[a-zA-Z0-9_-]{11}$/;
   if (!VALID_VID.test(videoId)) { resolve({ ok: false, error: 'Invalid video ID' }); return; }
-  // FIX POC2: execFile() — no shell, args passed as array, no injection possible
-  execFile(bin, ['-f', 'bestaudio[acodec=opus]/bestaudio[acodec=m4a]/bestaudio', '-g',
+  // Format selection based on quality setting
+  let fmt;
+  if (quality === '128') fmt = 'bestaudio[abr<=128][acodec=opus]/bestaudio[abr<=128]/worstaudio';
+  else if (quality === '256') fmt = 'bestaudio[abr<=256][acodec=opus]/bestaudio[abr<=256]/bestaudio';
+  else fmt = 'bestaudio[acodec=opus]/bestaudio[acodec=m4a]/bestaudio'; // best
+  execFile(bin, ['-f', fmt, '-g',
     `https://www.youtube.com/watch?v=${videoId}`, '--no-warnings'],
     { maxBuffer: 1024*1024, windowsHide: true }, (err, out) => {
     if (err) { resolve({ ok: false, error: err.message }); return; }
@@ -430,9 +435,9 @@ ipcMain.handle('get-playlists', (_, userId) => {
   })).sort((a, b) => b.id - a.id);
 });
 
-ipcMain.handle('create-playlist', (_, { userId, name }) => {
+ipcMain.handle('create-playlist', (_, { userId, name, username }) => {
   const db = loadDB();
-  const pl = { id: nextId(db.playlists), user_id: userId, name, created_at: new Date().toISOString() };
+  const pl = { id: nextId(db.playlists), user_id: userId, name, owner_username: username || '', public: false, created_at: new Date().toISOString() };
   db.playlists.push(pl);
   saveDB(db);
   return { ok: true, ...pl };
@@ -472,6 +477,57 @@ ipcMain.handle('remove-from-playlist', (_, { playlistId, videoId }) => {
   const db = loadDB();
   db.playlist_tracks = db.playlist_tracks.filter(t => !(t.playlist_id === playlistId && t.video_id === videoId));
   saveDB(db); return { ok: true };
+});
+
+// ── Community Playlists ───────────────────────────────────────────────────────
+ipcMain.handle('get-public-playlists', (_, query) => {
+  const db = loadDB();
+  return db.playlists
+    .filter(p => p.public === true)
+    .map(p => ({
+      ...p,
+      trackCount: db.playlist_tracks.filter(t => t.playlist_id === p.id).length
+    }))
+    .filter(p => !query || p.name.toLowerCase().includes(query.toLowerCase()) || (p.owner_username||'').toLowerCase().includes(query.toLowerCase()))
+    .sort((a, b) => b.id - a.id);
+});
+
+ipcMain.handle('toggle-playlist-public', (_, { playlistId, userId, username }) => {
+  const db = loadDB();
+  const pl = db.playlists.find(p => p.id === playlistId && p.user_id === userId);
+  if (!pl) return { ok: false, error: 'Not found' };
+  pl.public = !pl.public;
+  pl.owner_username = username || pl.owner_username || '';
+  saveDB(db);
+  return { ok: true, public: pl.public };
+});
+
+ipcMain.handle('save-community-playlist', (_, { playlistId, userId, username }) => {
+  const db = loadDB();
+  const src = db.playlists.find(p => p.id === playlistId && p.public === true);
+  if (!src) return { ok: false, error: 'Playlist not found or not public' };
+  const tracks = db.playlist_tracks.filter(t => t.playlist_id === playlistId);
+  const newPl = {
+    id: nextId(db.playlists),
+    user_id: userId,
+    name: `${src.name}`,
+    owner_username: username || '',
+    public: false,
+    saved_from: src.owner_username || '',
+    created_at: new Date().toISOString()
+  };
+  db.playlists.push(newPl);
+  tracks.forEach(t => {
+    db.playlist_tracks.push({
+      id: nextId(db.playlist_tracks),
+      playlist_id: newPl.id,
+      video_id: t.video_id, title: t.title, artist: t.artist,
+      thumbnail: t.thumbnail, duration: t.duration,
+      added_at: new Date().toISOString()
+    });
+  });
+  saveDB(db);
+  return { ok: true, playlistId: newPl.id };
 });
 
 // ── Liked Songs ───────────────────────────────────────────────────────────
