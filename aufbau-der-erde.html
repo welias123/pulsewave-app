@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Aufbau der Erde – Referat</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#0a0f1a;color:#fff;overflow-x:hidden}
+.slide{min-height:100vh;padding:60px 48px;display:flex;flex-direction:column;justify-content:center;border-bottom:3px solid #1a2a44;position:relative;overflow:hidden}
+.slide-num{position:absolute;top:20px;right:28px;font-size:12px;color:#334466;font-weight:700}
+h1{font-size:clamp(36px,6vw,72px);font-weight:900;letter-spacing:-2px;line-height:1.05}
+h2{font-size:clamp(24px,4vw,42px);font-weight:800;letter-spacing:-1px;margin-bottom:32px}
+.eyebrow{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px}
+.muted{color:#8899bb}
+.yellow{color:#FFD600}
+.green{color:#2aaa55}
+.blue{color:#4a9ee8}
+.orange{color:#e86a1a}
+.red{color:#e83a1a}
+.s1{background:linear-gradient(135deg,#060a12 0%,#0d1a0d 50%,#0a0f1a 100%)}
+.grid{display:grid;gap:16px;margin-top:16px}
+.grid-2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.card{background:#10192e;border-radius:14px;padding:24px;border-left:5px solid}
+.card h3{font-size:16px;font-weight:700;margin-bottom:10px}
+.card p,.card li{font-size:14px;color:#8899bb;line-height:1.7}
+.card ul{padding-left:18px}
+.layer-row{display:flex;align-items:center;gap:16px;background:#101828;border-radius:12px;padding:16px 20px;margin-bottom:10px;border-left:6px solid}
+.layer-row .name{font-weight:700;font-size:15px;min-width:180px}
+.layer-row .depth{font-size:13px;color:#aab;min-width:160px}
+.layer-row .desc{font-size:13px;color:#8899bb}
+table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
+th{background:#1a2a44;padding:12px 16px;text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:1px;color:#8899bb}
+td{padding:12px 16px;border-bottom:1px solid #151f33}
+tr:nth-child(even) td{background:#0d1525}
+@media(max-width:600px){.slide{padding:40px 24px}.layer-row{flex-direction:column;align-items:flex-start;gap:6px}.layer-row .name{min-width:unset}}
+</style>
+</head>
+<body>
+
+<div class="slide s1">
+  <div class="slide-num">1 / 7</div>
+  <div style="position:absolute;right:0;top:0;width:50%;height:100%;overflow:hidden;opacity:.15">
+    <div style="width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,#2a8a4a,transparent);position:absolute;right:-100px;top:50%;transform:translateY(-50%)"></div>
+    <div style="width:360px;height:360px;border-radius:50%;background:radial-gradient(circle,#1a6bc4,transparent);position:absolute;right:-50px;top:50%;transform:translateY(-50%)"></div>
+    <div style="width:240px;height:240px;border-radius:50%;background:radial-gradient(circle,#e86a1a,transparent);position:absolute;right:-20px;top:50%;transform:translateY(-50%)"></div>
+    <div style="width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,#c42a1a,transparent);position:absolute;right:10px;top:50%;transform:translateY(-50%)"></div>
+    <div style="width:60px;height:60px;border-radius:50%;background:#FFD600;position:absolute;right:55px;top:50%;transform:translateY(-50%)"></div>
+  </div>
+  <div style="position:relative;z-index:1;max-width:700px">
+    <div class="eyebrow" style="color:#4a9ee8">Geographie Referat</div>
+    <h1 style="margin-bottom:16px">🌍 Aufbau<br/><span style="color:#4a9ee8">der Erde</span></h1>
+    <div style="width:80px;height:4px;background:#4a9ee8;margin-bottom:24px;border-radius:2px"></div>
+    <p class="muted" style="font-size:18px;line-height:1.7">Erdkruste · Erdmantel · Erdkern</p>
+    <p style="margin-top:32px;font-size:13px;color:#334466">2026</p>
+  </div>
+</div>
+
+<div class="slide" style="background:#080d18">
+  <div class="slide-num">2 / 7</div>
+  <div class="eyebrow blue">Überblick</div>
+  <h2>Die Schichten der Erde</h2>
+  <p class="muted" style="margin-bottom:28px;font-size:15px">Die Erde besteht aus 5 Hauptschichten — je tiefer, desto heißer und dichter.</p>
+  <div class="layer-row" style="border-color:#2aaa55"><span style="font-size:22px">🟢</span><span class="name green">Erdkruste</span><span class="depth">0 – 70 km</span><span class="desc">Fest · Gestein · Tektonische Platten</span></div>
+  <div class="layer-row" style="border-color:#4a9ee8"><span style="font-size:22px">🔵</span><span class="name blue">Oberer Erdmantel</span><span class="depth">70 – 660 km</span><span class="desc">Zähflüssig · Silikate · Magma</span></div>
+  <div class="layer-row" style="border-color:#e86a1a"><span style="font-size:22px">🟠</span><span class="name orange">Unterer Erdmantel</span><span class="depth">660 – 2.900 km</span><span class="desc">Fest · Sehr heiß · Hoher Druck</span></div>
+  <div class="layer-row" style="border-color:#e83a1a"><span style="font-size:22px">🔴</span><span class="name red">Äußerer Erdkern</span><span class="depth">2.900 – 5.150 km</span><span class="desc">Flüssig · Eisen &amp; Nickel · 4.000–5.000°C</span></div>
+  <div class="layer-row" style="border-color:#FFD600"><span style="font-size:22px">🟡</span><span class="name yellow">Innerer Erdkern</span><span class="depth">5.150 – 6.371 km</span><span class="desc">Fest · ~5.500°C · Extremer Druck</span></div>
+</div>
+
+<div class="slide" style="background:#080f0a">
+  <div class="slide-num">3 / 7</div>
+  <div class="eyebrow green">Schicht 1</div>
+  <h2 class="green">🟢 Erdkruste</h2>
+  <p class="muted" style="margin-bottom:24px;font-size:15px">Die äußerste und dünnste Schicht — die Schicht auf der wir leben.</p>
+  <div class="grid grid-2">
+    <div class="card" style="border-color:#2aaa55"><h3 class="green">Kontinentale Kruste</h3><ul><li>Dicke: 30–70 km</li><li>Gestein: Granit (leicht)</li><li>Trägt Kontinente &amp; Gebirge</li><li>Älter und leichter</li></ul></div>
+    <div class="card" style="border-color:#4a9ee8"><h3 class="blue">Ozeanische Kruste</h3><ul><li>Dicke: 5–10 km</li><li>Gestein: Basalt (schwer)</li><li>Liegt unter den Ozeanen</li><li>Jünger und dichter</li></ul></div>
+    <div class="card" style="border-color:#e86a1a"><h3 class="orange">🔀 Tektonische Platten</h3><p>Die Kruste ist in Platten zerbrochen, die sich ca. 2–10 cm/Jahr bewegen. An den Grenzen entstehen Erdbeben, Vulkane und Gebirge.</p></div>
+    <div class="card" style="border-color:#2aaa55"><h3 class="green">📊 Fakten</h3><ul><li>Temperatur: 0–1.000°C</li><li>Dichte: 2,7–3,0 g/cm³</li><li>Elemente: O, Si, Al</li><li>Nur 1% der Erdmasse</li></ul></div>
+  </div>
+</div>
+
+<div class="slide" style="background:#080a18">
+  <div class="slide-num">4 / 7</div>
+  <div class="eyebrow blue">Schicht 2 &amp; 3</div>
+  <h2 class="blue">🔵 Erdmantel</h2>
+  <p class="muted" style="margin-bottom:24px;font-size:15px">Dickste Schicht — macht ca. 84% des Erdvolumens aus.</p>
+  <div class="grid grid-2">
+    <div class="card" style="border-color:#4a9ee8"><h3 class="blue">Oberer Erdmantel</h3><ul><li>Tiefe: 70–660 km</li><li>Zustand: <strong style="color:#fff">Zähflüssig</strong></li><li>Hier schwimmen die Platten</li><li>Temperatur: 1.000–1.600°C</li><li>Magma kann aufsteigen</li></ul></div>
+    <div class="card" style="border-color:#e86a1a"><h3 class="orange">Unterer Erdmantel</h3><ul><li>Tiefe: 660–2.900 km</li><li>Zustand: <strong style="color:#fff">Fest</strong> (wegen Druck)</li><li>Langsame Konvektion</li><li>Temperatur: 1.600–3.700°C</li><li>Gestein: Silikate &amp; Oxide</li></ul></div>
+    <div class="card" style="border-color:#e86a1a"><h3 class="orange">🔄 Konvektion</h3><p>Heiße Gesteine steigen auf, kühlen ab und sinken wieder — wie in einem Kochtopf. Diese Strömungen bewegen die tektonischen Platten.</p></div>
+    <div class="card" style="border-color:#4a9ee8"><h3 class="blue">📊 Fakten</h3><ul><li>Dichte: 3,3–5,6 g/cm³</li><li>Elemente: O, Mg, Fe</li><li>Gestein: Peridotit, Olivin</li><li>84% des Erdvolumens</li></ul></div>
+  </div>
+</div>
+
+<div class="slide" style="background:#120808">
+  <div class="slide-num">5 / 7</div>
+  <div class="eyebrow red">Schicht 4 &amp; 5</div>
+  <h2 class="red">🔴 Erdkern</h2>
+  <p class="muted" style="margin-bottom:24px;font-size:15px">Besteht hauptsächlich aus Eisen &amp; Nickel — heißester Teil der Erde.</p>
+  <div class="grid grid-2">
+    <div class="card" style="border-color:#e83a1a"><h3 class="red">🔴 Äußerer Erdkern</h3><ul><li>Tiefe: 2.900–5.150 km</li><li>Zustand: <strong style="color:#fff">FLÜSSIG</strong></li><li>Eisen &amp; Nickel</li><li>Temperatur: 4.000–5.000°C</li><li>⚡ Erzeugt das Magnetfeld!</li></ul></div>
+    <div class="card" style="border-color:#FFD600"><h3 class="yellow">🟡 Innerer Erdkern</h3><ul><li>Tiefe: 5.150–6.371 km</li><li>Zustand: <strong style="color:#fff">FEST</strong></li><li>Druck: 3,6 Mio. bar</li><li>Temperatur: ~5.500°C</li><li>Radius: ca. 1.220 km</li></ul></div>
+    <div class="card" style="border-color:#e86a1a"><h3 class="orange">🧲 Erdmagnetfeld</h3><p>Der flüssige Eisenkern + Erdrotation erzeugt das Magnetfeld. Es schützt uns vor dem gefährlichen Sonnenwind.</p></div>
+    <div class="card" style="border-color:#e83a1a"><h3 class="red">📊 Fakten</h3><ul><li>32% der Erdmasse</li><li>16% des Erdvolumens</li><li>Entdeckt durch Erdbebenwellen</li><li>Erdradius gesamt: 6.371 km</li></ul></div>
+  </div>
+</div>
+
+<div class="slide" style="background:#080d18">
+  <div class="slide-num">6 / 7</div>
+  <div class="eyebrow blue">Zusammenfassung</div>
+  <h2>📊 Alle Schichten im Überblick</h2>
+  <table>
+    <thead><tr><th>Schicht</th><th>Tiefe</th><th>Temperatur</th><th>Zustand</th><th>Besonderheit</th></tr></thead>
+    <tbody>
+      <tr><td class="green">🟢 Erdkruste</td><td>0–70 km</td><td>0–1.000°C</td><td>Fest</td><td>Tektonische Platten</td></tr>
+      <tr><td class="blue">🔵 Ob. Mantel</td><td>70–660 km</td><td>1.000–1.600°C</td><td>Zähflüssig</td><td>Trägt die Platten</td></tr>
+      <tr><td class="orange">🟠 Unt. Mantel</td><td>660–2.900 km</td><td>1.600–3.700°C</td><td>Fest</td><td>Konvektionsströme</td></tr>
+      <tr><td class="red">🔴 Äuß. Kern</td><td>2.900–5.150 km</td><td>4.000–5.000°C</td><td><strong style="color:#e83a1a">Flüssig</strong></td><td>Erzeugt Magnetfeld</td></tr>
+      <tr><td class="yellow">🟡 Inn. Kern</td><td>5.150–6.371 km</td><td>~5.500°C</td><td><strong style="color:#FFD600">Fest</strong></td><td>Extremer Druck</td></tr>
+    </tbody>
+  </table>
+  <p class="muted" style="margin-top:20px;font-size:13px;text-align:center">Je tiefer → desto heißer, dichter und unter höherem Druck</p>
+</div>
+
+<div class="slide" style="background:linear-gradient(135deg,#060a12,#0a0f0a);text-align:center;align-items:center">
+  <div class="slide-num">7 / 7</div>
+  <div style="font-size:64px;margin-bottom:24px">🌍</div>
+  <h1 style="font-size:clamp(32px,5vw,56px);margin-bottom:16px">Danke fürs Zuhören!</h1>
+  <p class="blue" style="font-size:22px;margin-bottom:32px;font-style:italic">Fragen?</p>
+  <div style="width:120px;height:4px;background:#4a9ee8;margin:0 auto 28px;border-radius:2px"></div>
+  <p class="muted" style="font-size:14px">Aufbau der Erde · Erdkruste · Erdmantel · Erdkern</p>
+</div>
+
+</body>
+</html>
