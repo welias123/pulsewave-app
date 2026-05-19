@@ -1,38 +1,44 @@
 """
-Aufbau der Erde – neue Präsentation
+Aufbau der Erde – Präsentation mit Bildplatzhaltern rechts
 Person 1: Entstehung, Erdkruste, Ob. Mantel, Unt. Mantel
 Person 2: Äuß. Kern, Inn. Kern, Vulkane/Erdbeben, Bedeutung
++ Zusammenfassung + Danke
 """
 
 from pptx import Presentation
-from pptx.util import Inches, Pt, Emu
+from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 
 OUT = "/home/user/pulsewave-app/Aufbau_der_Erde.pptx"
 
-# ── colours ──────────────────────────────────────────────────────────────────
-BG        = RGBColor(0x0a, 0x16, 0x28)
-ACCENT    = RGBColor(0x1e, 0x40, 0xaf)
-WHITE     = RGBColor(0xFF, 0xFF, 0xFF)
-GRAY      = RGBColor(0x94, 0xa3, 0xb8)
-GREEN     = RGBColor(0x4a, 0xde, 0x80)
-BLUE      = RGBColor(0x60, 0xa5, 0xfa)
-ORANGE    = RGBColor(0xfb, 0x92, 0x3c)
-RED       = RGBColor(0xf8, 0x71, 0x71)
-YELLOW    = RGBColor(0xfb, 0xbf, 0x24)
-TEAL      = RGBColor(0x2d, 0xd4, 0xbf)
-PURPLE    = RGBColor(0xc0, 0x84, 0xfc)
-PINK      = RGBColor(0xf4, 0x72, 0xb6)
+BG      = RGBColor(0x0a, 0x16, 0x28)
+ACCENT  = RGBColor(0x1e, 0x40, 0xaf)
+WHITE   = RGBColor(0xFF, 0xFF, 0xFF)
+GRAY    = RGBColor(0x94, 0xa3, 0xb8)
+GREEN   = RGBColor(0x4a, 0xde, 0x80)
+BLUE    = RGBColor(0x60, 0xa5, 0xfa)
+ORANGE  = RGBColor(0xfb, 0x92, 0x3c)
+RED     = RGBColor(0xf8, 0x71, 0x71)
+YELLOW  = RGBColor(0xfb, 0xbf, 0x24)
+TEAL    = RGBColor(0x2d, 0xd4, 0xbf)
+PURPLE  = RGBColor(0xc0, 0x84, 0xfc)
+CARD    = RGBColor(0x0f, 0x23, 0x3d)
+IMGBG   = RGBColor(0x0d, 0x1e, 0x35)
 
-P1_COLOR  = TEAL      # Person 1 accent
-P2_COLOR  = PURPLE    # Person 2 accent
+P1 = TEAL
+P2 = PURPLE
 
 W = Inches(13.33)
 H = Inches(7.5)
 
+# Layout constants
+LEFT_W   = 7.6   # text area width
+IMG_X    = 8.05  # image placeholder x
+IMG_Y    = 1.25  # image placeholder y
+IMG_W    = 5.0   # image placeholder width
+IMG_H    = 6.0   # image placeholder height
 
-# ── helpers ──────────────────────────────────────────────────────────────────
 
 def new_prs():
     prs = Presentation()
@@ -40,539 +46,344 @@ def new_prs():
     prs.slide_height = H
     return prs
 
+def blank(prs):
+    return prs.slides.add_slide(prs.slide_layouts[6])
 
-def blank_slide(prs):
-    layout = prs.slide_layouts[6]   # blank
-    return prs.slides.add_slide(layout)
+def rect(slide, x, y, w, h, fill):
+    sh = slide.shapes.add_shape(1, Inches(x), Inches(y), Inches(w), Inches(h))
+    sh.fill.solid(); sh.fill.fore_color.rgb = fill
+    sh.line.fill.background()
+    return sh
 
+def tb(slide, text, x, y, w, h, size=18, bold=False,
+       color=WHITE, align=PP_ALIGN.LEFT, italic=False):
+    box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
+    tf  = box.text_frame; tf.word_wrap = True
+    p   = tf.paragraphs[0]; p.alignment = align
+    r   = p.add_run(); r.text = text
+    r.font.size = Pt(size); r.font.bold = bold
+    r.font.italic = italic; r.font.color.rgb = color
+    return box
 
-def rect(slide, x, y, w, h, fill, alpha=None):
-    shape = slide.shapes.add_shape(1, Inches(x), Inches(y), Inches(w), Inches(h))
-    shape.line.fill.background()
-    shape.fill.solid()
-    shape.fill.fore_color.rgb = fill
-    return shape
-
-
-def textbox(slide, text, x, y, w, h, size=20, bold=False,
-            color=WHITE, align=PP_ALIGN.LEFT, italic=False):
-    tb = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
-    tf = tb.text_frame
-    tf.word_wrap = True
-    p  = tf.paragraphs[0]
-    p.alignment = align
-    run = p.add_run()
-    run.text = text
-    run.font.size  = Pt(size)
-    run.font.bold  = bold
-    run.font.italic = italic
-    run.font.color.rgb = color
-    return tb
-
-
-def add_lines(tf, lines, size=18, color=WHITE, bold=False):
-    """Add multiple bullet lines to an existing text frame."""
+def add_lines(tf, lines, size=16, color=WHITE, bold=False):
     for i, line in enumerate(lines):
-        if i == 0:
-            p = tf.paragraphs[0]
-        else:
-            p = tf.add_paragraph()
+        p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
         p.alignment = PP_ALIGN.LEFT
-        run = p.add_run()
-        run.text = line
-        run.font.size  = Pt(size)
-        run.font.bold  = bold
-        run.font.color.rgb = color
-
-
-def header_bar(slide, title, accent_color, person_tag=None):
-    """Dark header bar with title and optional person tag."""
-    rect(slide, 0, 0, 13.33, 1.1, ACCENT)
-    rect(slide, 0, 0, 0.08, 1.1, accent_color)        # left colour stripe
-    textbox(slide, title, 0.25, 0.08, 10, 0.9,
-            size=32, bold=True, color=WHITE)
-    if person_tag:
-        textbox(slide, person_tag, 11.0, 0.25, 2.1, 0.6,
-                size=14, bold=True, color=accent_color, align=PP_ALIGN.RIGHT)
-    # thin separator line
-    rect(slide, 0, 1.1, 13.33, 0.04, accent_color)
-
-
-def info_card(slide, x, y, w, h, title, lines, title_color, line_size=17):
-    """Rounded card with title + bullet lines."""
-    rect(slide, x, y, w, h, RGBColor(0x0f, 0x23, 0x3d))
-    rect(slide, x, y, 0.06, h, title_color)            # left stripe
-    textbox(slide, title, x+0.15, y+0.12, w-0.25, 0.38,
-            size=15, bold=True, color=title_color)
-    tb = slide.shapes.add_textbox(
-        Inches(x+0.15), Inches(y+0.52), Inches(w-0.25), Inches(h-0.62))
-    tb.text_frame.word_wrap = True
-    add_lines(tb.text_frame, lines, size=line_size)
-
+        r = p.add_run(); r.text = line
+        r.font.size = Pt(size); r.font.bold = bold
+        r.font.color.rgb = color
 
 def bg(slide):
     rect(slide, 0, 0, 13.33, 7.5, BG)
 
+def header(slide, title, color, tag=None):
+    rect(slide, 0, 0, 13.33, 1.1, ACCENT)
+    rect(slide, 0, 0, 0.08,  1.1, color)
+    tb(slide, title, 0.25, 0.1, 9.5, 0.9, size=30, bold=True)
+    if tag:
+        tb(slide, tag, 10.5, 0.28, 2.6, 0.5, size=13,
+           bold=True, color=color, align=PP_ALIGN.RIGHT)
+    rect(slide, 0, 1.1, 13.33, 0.04, color)
 
-# ══════════════════════════════════════════════════════════════════════════════
+def card(slide, x, y, w, h, title, lines, color, lsize=15):
+    rect(slide, x, y, w, h, CARD)
+    rect(slide, x, y, 0.06, h, color)
+    tb(slide, title, x+0.15, y+0.1, w-0.25, 0.38,
+       size=14, bold=True, color=color)
+    box = slide.shapes.add_textbox(
+        Inches(x+0.15), Inches(y+0.5), Inches(w-0.25), Inches(h-0.6))
+    box.text_frame.word_wrap = True
+    add_lines(box.text_frame, lines, size=lsize)
+
+def img_placeholder(slide, label="📷  Bild hier einfügen"):
+    """Empty box on right side for user to insert image."""
+    rect(slide, IMG_X, IMG_Y, IMG_W, IMG_H, IMGBG)
+    # border effect – thin coloured lines
+    rect(slide, IMG_X,            IMG_Y,            IMG_W, 0.04, GRAY)
+    rect(slide, IMG_X,            IMG_Y+IMG_H-0.04, IMG_W, 0.04, GRAY)
+    rect(slide, IMG_X,            IMG_Y,            0.04,  IMG_H, GRAY)
+    rect(slide, IMG_X+IMG_W-0.04, IMG_Y,            0.04,  IMG_H, GRAY)
+    # label centered in the box
+    tb(slide, label,
+       IMG_X, IMG_Y + IMG_H/2 - 0.3, IMG_W, 0.6,
+       size=15, color=GRAY, align=PP_ALIGN.CENTER, italic=True)
+
+
+# ═══════════════════════════════════════════════════════════════
 # SLIDES
-# ══════════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════
 
-def slide_title(prs):
-    s = blank_slide(prs)
-    bg(s)
-
-    # decorative layer circles (cross-section feel)
-    for radius, color in [
-        (3.8, RGBColor(0x1e,0x3a,0x5f)),
-        (3.0, RGBColor(0x1e,0x40,0xaf)),
-        (2.2, RGBColor(0xfb,0x92,0x3c)),
-        (1.4, RGBColor(0xf8,0x71,0x71)),
-        (0.7, RGBColor(0xfb,0xbf,0x24)),
-    ]:
-        cx = 10.8; cy = 3.75
-        r  = radius
-        s.shapes.add_shape(9,   # oval
-            Inches(cx-r), Inches(cy-r), Inches(r*2), Inches(r*2)
-        ).fill.solid() or None
+def s_titel(prs):
+    s = blank(prs); bg(s)
+    # decorative circles right side
+    for r_in, col in [(3.6,RGBColor(0x1e,0x3a,0x5f)),
+                      (2.7,RGBColor(0x1e,0x40,0xaf)),
+                      (1.9,RGBColor(0xfb,0x92,0x3c)),
+                      (1.2,RGBColor(0xf8,0x71,0x71)),
+                      (0.6,RGBColor(0xfb,0xbf,0x24))]:
+        cx,cy = 10.8, 3.75
+        s.shapes.add_shape(9, Inches(cx-r_in), Inches(cy-r_in),
+                           Inches(r_in*2), Inches(r_in*2))
         ov = s.shapes[-1]
-        ov.fill.solid(); ov.fill.fore_color.rgb = color
+        ov.fill.solid(); ov.fill.fore_color.rgb = col
         ov.line.fill.background()
-
-    # left panel
-    rect(s, 0, 0, 7.5, 7.5, RGBColor(0x0a,0x16,0x28))
+    rect(s, 0, 0, 7.5, 7.5, BG)
     rect(s, 0, 0, 0.08, 7.5, TEAL)
-
-    textbox(s, "🌍", 0.5, 0.6, 1.5, 1.2, size=52)
-    textbox(s, "Aufbau der Erde", 0.5, 1.7, 6.8, 1.5,
-            size=44, bold=True, color=WHITE)
-    textbox(s, "Erdkruste  ·  Erdmantel  ·  Erdkern",
-            0.5, 3.1, 6.8, 0.7, size=20, color=GRAY)
-
+    tb(s, "🌍", 0.5, 0.6, 1.5, 1.2, size=52)
+    tb(s, "Aufbau der Erde", 0.5, 1.7, 6.8, 1.4, size=44, bold=True)
+    tb(s, "Erdkruste  ·  Erdmantel  ·  Erdkern",
+       0.5, 3.1, 6.8, 0.7, size=20, color=GRAY)
     rect(s, 0.5, 3.85, 6.0, 0.04, TEAL)
-
-    textbox(s, "👤 Person 1  —  Folien 2–5", 0.5, 4.05, 6.0, 0.5,
-            size=15, color=P1_COLOR)
-    textbox(s, "👤 Person 2  —  Folien 6–9", 0.5, 4.55, 6.0, 0.5,
-            size=15, color=P2_COLOR)
-
-    textbox(s, "Geographie Referat  ·  2026",
-            0.5, 6.7, 6.0, 0.5, size=13, color=GRAY)
+    tb(s, "👤 Person 1  —  Folien 2–5", 0.5, 4.05, 6.0, 0.5, size=15, color=P1)
+    tb(s, "👤 Person 2  —  Folien 6–9", 0.5, 4.55, 6.0, 0.5, size=15, color=P2)
+    tb(s, "Geographie Referat  ·  2026",
+       0.5, 6.7, 6.0, 0.5, size=13, color=GRAY)
 
 
-def slide_entstehung(prs):
-    """Folie 2 – Entstehung der Erde (Person 1)"""
-    s = blank_slide(prs)
-    bg(s)
-    header_bar(s, "🌑  Entstehung der Erde", P1_COLOR, "👤 Person 1  ·  Folie 2")
-
-    info_card(s, 0.3, 1.3, 6.1, 2.7,
-        "Urknall & Sonnensystem",
-        ["• Vor ~4,6 Milliarden Jahren entstand die Erde",
-         "• Aus einer rotierenden Gas- und Staubscheibe",
-         "• um die junge Sonne",
-         "• Kleine Partikel zogen sich durch Gravitation zusammen",
-         "• → immer größerer Körper: Protoerde"],
-        TEAL)
-
-    info_card(s, 6.6, 1.3, 6.4, 2.7,
-        "Differenzierung (Schichtenbildung)",
-        ["• Die Erde war anfangs komplett geschmolzen",
-         "• Schwere Elemente (Eisen, Nickel) sanken in die Mitte",
-         "• Leichtere Gesteine stiegen nach oben",
-         "• → Kern, Mantel und Kruste bildeten sich"],
-        TEAL)
-
-    info_card(s, 0.3, 4.2, 6.1, 2.8,
-        "Abkühlung & erste Kruste",
-        ["• Oberfläche kühlte langsam ab",
-         "• Erste feste Erdkruste entstand",
-         "• Wasser kondensierte → erste Ozeane",
-         "• Erste Atmosphäre bildete sich"],
-        TEAL)
-
-    info_card(s, 6.6, 4.2, 6.4, 2.8,
-        "Wichtige Fakten",
-        ["• Alter der Erde: ~4,6 Mrd. Jahre",
-         "• Erdradius: 6.371 km",
-         "• 5 Schichten: Kruste, ob. Mantel,",
-         "  unt. Mantel, äuß. Kern, inn. Kern",
-         "• Je tiefer → heißer & dichter"],
-        YELLOW)
+def s_entstehung(prs):
+    s = blank(prs); bg(s)
+    header(s, "🌑  Entstehung der Erde", P1, "👤 Person 1  ·  Folie 2")
+    card(s, 0.3, 1.25, LEFT_W, 2.9,
+         "Entstehung & Differenzierung",
+         ["• Vor ~4,6 Mrd. Jahren aus Staub & Gas",
+          "• Gravitation → Protoerde",
+          "• Erde war komplett geschmolzen",
+          "• Schwere Elemente (Eisen) → Kern",
+          "• Leichte Gesteine → Kruste"],
+         TEAL)
+    card(s, 0.3, 4.3, LEFT_W, 2.9,
+         "Abkühlung & erste Erde",
+         ["• Oberfläche kühlte langsam ab",
+          "• Erste feste Erdkruste entstand",
+          "• Wasser kondensierte → Ozeane",
+          "• Erdradius: 6.371 km",
+          "• 5 Schichten: je tiefer → heißer & dichter"],
+         YELLOW)
+    img_placeholder(s, "📷  Bild: Entstehung der Erde")
 
 
-def slide_erdkruste(prs):
-    """Folie 3 – Die Erdkruste (Person 1)"""
-    s = blank_slide(prs)
-    bg(s)
-    header_bar(s, "🟢  Die Erdkruste", GREEN, "👤 Person 1  ·  Folie 3")
-
-    info_card(s, 0.3, 1.3, 6.1, 2.7,
-        "Kontinentale Kruste",
-        ["• Dicke: 30–70 km",
-         "• Gestein: Granit (leicht)",
-         "• Trägt die Kontinente & Gebirge",
-         "• Älter und leichter als ozeanische Kruste",
-         "• Temperatur: 0°C bis ~1.000°C"],
-        GREEN)
-
-    info_card(s, 6.6, 1.3, 6.4, 2.7,
-        "Ozeanische Kruste",
-        ["• Dicke: 5–10 km",
-         "• Gestein: Basalt (schwer, dunkel)",
-         "• Liegt unter den Weltmeeren",
-         "• Jünger und dichter als Kontinentalkruste",
-         "• Wird an Plattengrenzen neu gebildet"],
-        BLUE)
-
-    info_card(s, 0.3, 4.2, 6.1, 2.8,
-        "Tektonische Platten",
-        ["• Erdkruste ist in ~15 große Platten geteilt",
-         "• Platten bewegen sich: 2–10 cm/Jahr",
-         "• Angetrieben durch Konvektion im Mantel",
-         "• An Grenzen: Erdbeben, Vulkane, Gebirge"],
-        ORANGE)
-
-    info_card(s, 6.6, 4.2, 6.4, 2.8,
-        "Wichtige Fakten",
-        ["• Dünnste Schicht der Erde",
-         "• Nur ~1% der Erdmasse",
-         "• Hauptelemente: Sauerstoff, Silizium,",
-         "  Aluminium",
-         "• Dichte: 2,7–3,0 g/cm³"],
-        GREEN)
+def s_erdkruste(prs):
+    s = blank(prs); bg(s)
+    header(s, "🟢  Die Erdkruste", GREEN, "👤 Person 1  ·  Folie 3")
+    card(s, 0.3, 1.25, LEFT_W, 2.9,
+         "Kontinentale & Ozeanische Kruste",
+         ["• Kontinental: 30–70 km, Granit → Kontinente",
+          "• Ozeanisch: 5–10 km, Basalt → Ozeane",
+          "• Dünnste Schicht, nur 1% der Erdmasse",
+          "• Hauptelemente: Sauerstoff, Silizium"],
+         GREEN)
+    card(s, 0.3, 4.3, LEFT_W, 2.9,
+         "Tektonische Platten",
+         ["• Kruste in ~15 große Platten geteilt",
+          "• Bewegung: 2–10 cm/Jahr",
+          "• Angetrieben durch Konvektion im Mantel",
+          "• An Grenzen: Erdbeben, Vulkane, Gebirge"],
+         ORANGE)
+    img_placeholder(s, "📷  Bild: Erdkruste / Platten")
 
 
-def slide_ob_mantel(prs):
-    """Folie 4 – Oberer Erdmantel (Person 1)"""
-    s = blank_slide(prs)
-    bg(s)
-    header_bar(s, "🔵  Der obere Erdmantel", BLUE, "👤 Person 1  ·  Folie 4")
-
-    info_card(s, 0.3, 1.3, 6.1, 2.7,
-        "Aufbau & Eigenschaften",
-        ["• Tiefe: 70 – 660 km",
-         "• Zustand: zähflüssig / plastisch",
-         "• Gestein: Peridotit, Olivin",
-         "• Temperatur: 1.000 – 1.600°C",
-         "• Dichte: 3,3 – 3,5 g/cm³"],
-        BLUE)
-
-    info_card(s, 6.6, 1.3, 6.4, 2.7,
-        "Asthenosphäre",
-        ["• Oberer Teil des Mantels",
-         "• Plastisch verformbar wie Kaugummi",
-         "• Tektonische Platten 'schwimmen' darauf",
-         "• Magma kann hier entstehen",
-         "• Ermöglicht Plattenbewegung"],
-        TEAL)
-
-    info_card(s, 0.3, 4.2, 6.1, 2.8,
-        "Konvektion",
-        ["• Heißes Gestein steigt auf",
-         "• Kühlt sich ab und sinkt wieder",
-         "• Wie in einem Kochtopf",
-         "• Treibt die tektonischen Platten an"],
-        ORANGE)
-
-    info_card(s, 6.6, 4.2, 6.4, 2.8,
-        "Wichtige Fakten",
-        ["• Macht ~10% des Erdvolumens aus",
-         "• Hauptelemente: Sauerstoff,",
-         "  Magnesium, Silizium, Eisen",
-         "• Verbindung zur Erdkruste:",
-         "  Lithosphäre = Kruste + ob. Mantel"],
-        BLUE)
+def s_ob_mantel(prs):
+    s = blank(prs); bg(s)
+    header(s, "🔵  Der obere Erdmantel", BLUE, "👤 Person 1  ·  Folie 4")
+    card(s, 0.3, 1.25, LEFT_W, 2.9,
+         "Aufbau & Asthenosphäre",
+         ["• Tiefe: 70 – 660 km",
+          "• Zustand: zähflüssig / plastisch",
+          "• Temperatur: 1.000 – 1.600°C",
+          "• Platten 'schwimmen' auf der Asthenosphäre",
+          "• Magma kann hier entstehen"],
+         BLUE)
+    card(s, 0.3, 4.3, LEFT_W, 2.9,
+         "Konvektion",
+         ["• Heißes Gestein steigt auf",
+          "• Kühlt ab und sinkt wieder",
+          "• Wie in einem Kochtopf",
+          "• Treibt die tektonischen Platten an"],
+         TEAL)
+    img_placeholder(s, "📷  Bild: Oberer Erdmantel")
 
 
-def slide_unt_mantel(prs):
-    """Folie 5 – Unterer Erdmantel (Person 1)"""
-    s = blank_slide(prs)
-    bg(s)
-    header_bar(s, "🟠  Der untere Erdmantel", ORANGE, "👤 Person 1  ·  Folie 5")
-
-    info_card(s, 0.3, 1.3, 6.1, 2.7,
-        "Aufbau & Eigenschaften",
-        ["• Tiefe: 660 – 2.900 km",
-         "• Zustand: FEST (trotz Hitze!)",
-         "• Grund: extremer Druck",
-         "• Temperatur: 1.600 – 3.700°C",
-         "• Dichte: 3,5 – 5,6 g/cm³"],
-        ORANGE)
-
-    info_card(s, 6.6, 1.3, 6.4, 2.7,
-        "Mesosphäre",
-        ["• Unterer Mantel = Mesosphäre",
-         "• Dickste Schicht der Erde",
-         "• Gestein fest wegen Druck",
-         "• Sehr langsame Konvektionsströmungen",
-         "• Material: Silikate & Oxide"],
-        RED)
-
-    info_card(s, 0.3, 4.2, 6.1, 2.8,
-        "Bedeutung",
-        ["• Macht ~74% des Erdvolumens aus",
-         "• Gesamter Mantel: ~84% Erdvolumen",
-         "• Wärmeleitung vom Kern zur Kruste",
-         "• Treibt langfristig Plattenbewegung"],
-        ORANGE)
-
-    info_card(s, 6.6, 4.2, 6.4, 2.8,
-        "Wichtige Fakten",
-        ["• Dickste Einzelschicht",
-         "• Hauptgestein: Peridotit",
-         "• Übergang zum Kern bei 2.900 km",
-         "• Grenze heißt: Kern-Mantel-Grenze",
-         "  (Gutenberg-Diskontinuität)"],
-        YELLOW)
+def s_unt_mantel(prs):
+    s = blank(prs); bg(s)
+    header(s, "🟠  Der untere Erdmantel", ORANGE, "👤 Person 1  ·  Folie 5")
+    card(s, 0.3, 1.25, LEFT_W, 2.9,
+         "Aufbau & Mesosphäre",
+         ["• Tiefe: 660 – 2.900 km",
+          "• Zustand: FEST (wegen extremem Druck!)",
+          "• Temperatur: 1.600 – 3.700°C",
+          "• Dickste Schicht → 74% des Erdvolumens",
+          "• Gestein: Silikate & Oxide"],
+         ORANGE)
+    card(s, 0.3, 4.3, LEFT_W, 2.9,
+         "Bedeutung",
+         ["• Wärmeleitung vom Kern zur Kruste",
+          "• Übergang zum Kern bei 2.900 km",
+          "• Grenze: Gutenberg-Diskontinuität",
+          "• Treibt langfristig Plattenbewegung"],
+         RED)
+    img_placeholder(s, "📷  Bild: Unterer Erdmantel")
 
 
-def slide_auss_kern(prs):
-    """Folie 6 – Äußerer Erdkern (Person 2)"""
-    s = blank_slide(prs)
-    bg(s)
-    header_bar(s, "🔴  Der äußere Erdkern", RED, "👤 Person 2  ·  Folie 6")
-
-    info_card(s, 0.3, 1.3, 6.1, 2.7,
-        "Aufbau & Eigenschaften",
-        ["• Tiefe: 2.900 – 5.150 km",
-         "• Zustand: FLÜSSIG",
-         "• Material: Eisen & Nickel",
-         "• Temperatur: 4.000 – 5.000°C",
-         "• Dichte: ~10–12 g/cm³"],
-        RED)
-
-    info_card(s, 6.6, 1.3, 6.4, 2.7,
-        "Das Magnetfeld",
-        ["• Flüssiges Eisen rotiert mit der Erde",
-         "• → erzeugt elektrische Ströme",
-         "• → erzeugt das Erdmagnetfeld",
-         "• Magnetfeld schützt vor Sonnenwind",
-         "• Ohne Magnetfeld: kein Leben auf Erde!"],
-        PINK)
-
-    info_card(s, 0.3, 4.2, 6.1, 2.8,
-        "Konvektion im Kern",
-        ["• Heiße Metallschmelze steigt auf",
-         "• Kühlt ab und sinkt wieder",
-         "• Bewegung durch Erdrotation",
-         "• → Dynamo-Effekt → Magnetfeld"],
-        RED)
-
-    info_card(s, 6.6, 4.2, 6.4, 2.8,
-        "Wichtige Fakten",
-        ["• Dicke: ~2.250 km",
-         "• Entdeckt durch Erdbebenwellen",
-         "• Schallwellen können flüssige",
-         "  Schicht nicht durchdringen",
-         "• ~30% der Erdmasse"],
-        YELLOW)
+def s_auss_kern(prs):
+    s = blank(prs); bg(s)
+    header(s, "🔴  Der äußere Erdkern", RED, "👤 Person 2  ·  Folie 6")
+    card(s, 0.3, 1.25, LEFT_W, 2.9,
+         "Aufbau & Eigenschaften",
+         ["• Tiefe: 2.900 – 5.150 km",
+          "• Zustand: FLÜSSIG",
+          "• Material: Eisen & Nickel",
+          "• Temperatur: 4.000 – 5.000°C"],
+         RED)
+    card(s, 0.3, 4.3, LEFT_W, 2.9,
+         "Das Magnetfeld",
+         ["• Flüssiges Eisen rotiert → Dynamo-Effekt",
+          "• → Erdmagnetfeld entsteht",
+          "• Magnetfeld schützt vor Sonnenwind",
+          "• Ohne Magnetfeld → kein Leben auf Erde!"],
+         PURPLE)
+    img_placeholder(s, "📷  Bild: Äußerer Erdkern")
 
 
-def slide_inn_kern(prs):
-    """Folie 7 – Innerer Erdkern (Person 2)"""
-    s = blank_slide(prs)
-    bg(s)
-    header_bar(s, "🟡  Der innere Erdkern", YELLOW, "👤 Person 2  ·  Folie 7")
-
-    info_card(s, 0.3, 1.3, 6.1, 2.7,
-        "Aufbau & Eigenschaften",
-        ["• Tiefe: 5.150 – 6.371 km",
-         "• Zustand: FEST",
-         "• Material: Eisen & Nickel",
-         "• Temperatur: ~5.500°C",
-         "• Radius: ~1.220 km"],
-        YELLOW)
-
-    info_card(s, 6.6, 1.3, 6.4, 2.7,
-        "Warum fest trotz 5.500°C?",
-        ["• Extremer Druck: 3,6 Mio. bar",
-         "• Druck verhindert dass Metall schmilzt",
-         "• Ähnlich wie Wasser unter Druck",
-         "• = höherer Siedepunkt",
-         "• Physikalisches Phänomen: Druckfestigung"],
-        ORANGE)
-
-    info_card(s, 0.3, 4.2, 6.1, 2.8,
-        "Besonderheiten",
-        ["• Rotiert leicht schneller als die Erde",
-         "• Etwa 0,3–0,5° pro Jahr schneller",
-         "• Innere Struktur noch nicht vollständig",
-         "  erforscht",
-         "• Heißeste Stelle der Erde"],
-        YELLOW)
-
-    info_card(s, 6.6, 4.2, 6.4, 2.8,
-        "Wichtige Fakten",
-        ["• ~16% des Erdvolumens (gesamter Kern)",
-         "• ~32% der Erdmasse",
-         "• Entdeckt 1936 von Inge Lehmann",
-         "• Nachweis durch Seismologie",
-         "  (Erdbebenwellen-Analyse)"],
-        YELLOW)
+def s_inn_kern(prs):
+    s = blank(prs); bg(s)
+    header(s, "🟡  Der innere Erdkern", YELLOW, "👤 Person 2  ·  Folie 7")
+    card(s, 0.3, 1.25, LEFT_W, 2.9,
+         "Aufbau & Eigenschaften",
+         ["• Tiefe: 5.150 – 6.371 km",
+          "• Zustand: FEST",
+          "• Material: Eisen & Nickel",
+          "• Temperatur: ~5.500°C",
+          "• Radius: ~1.220 km"],
+         YELLOW)
+    card(s, 0.3, 4.3, LEFT_W, 2.9,
+         "Besonderheiten",
+         ["• Fest trotz 5.500°C → Druck: 3,6 Mio. bar",
+          "• Rotiert leicht schneller als die Erde",
+          "• Entdeckt 1936 von Inge Lehmann",
+          "• Heißeste Stelle der Erde"],
+         ORANGE)
+    img_placeholder(s, "📷  Bild: Innerer Erdkern")
 
 
-def slide_vulkane(prs):
-    """Folie 8 – Vulkane & Erdbeben (Person 2)"""
-    s = blank_slide(prs)
-    bg(s)
-    header_bar(s, "🌋  Vulkane & Erdbeben durch Plattenbewegung",
-               ORANGE, "👤 Person 2  ·  Folie 8")
-
-    info_card(s, 0.3, 1.3, 6.1, 2.7,
-        "Wie entstehen Vulkane?",
-        ["• An Plattengrenzen drückt Magma hoch",
-         "• Subduzierte Platten schmelzen im Mantel",
-         "• Magma steigt durch Risse auf",
-         "• → Vulkane an Plattengrenzen",
-         "• Beispiel: Pazifischer Feuerring"],
-        RED)
-
-    info_card(s, 6.6, 1.3, 6.4, 2.7,
-        "Wie entstehen Erdbeben?",
-        ["• Platten bewegen sich gegeneinander",
-         "• Spannung baut sich auf",
-         "• Plötzliche Entladung = Erdbeben",
-         "• Stärke: Richterskala",
-         "• Gefährlichste Zone: Plattengrenzen"],
-        ORANGE)
-
-    info_card(s, 0.3, 4.2, 6.1, 2.8,
-        "Arten von Plattengrenzen",
-        ["• Divergent: Platten entfernen sich",
-         "  → Mittelozeanische Rücken, Vulkane",
-         "• Konvergent: Platten stoßen zusammen",
-         "  → Gebirge, Erdbeben, Vulkane",
-         "• Transform: Platten gleiten aneinander",
-         "  → Erdbeben (z.B. San-Andreas-Graben)"],
-        TEAL)
-
-    info_card(s, 6.6, 4.2, 6.4, 2.8,
-        "Bekannte Beispiele",
-        ["• Vesuv (Italien) – Konvergenzgrenze",
-         "• Eyjafjallajökull (Island) – Divergenz",
-         "• Erdbeben Japan 2011 – Subduktion",
-         "• Himalaya – Indien trifft Eurasien",
-         "• Pazifischer Feuerring – ~90% Beben"],
-        RED)
+def s_vulkane(prs):
+    s = blank(prs); bg(s)
+    header(s, "🌋  Vulkane & Erdbeben", ORANGE, "👤 Person 2  ·  Folie 8")
+    card(s, 0.3, 1.25, LEFT_W, 2.9,
+         "Wie entstehen Vulkane & Erdbeben?",
+         ["• An Plattengrenzen drückt Magma hoch",
+          "• Subduktion → Platte schmilzt → Vulkan",
+          "• Platten spannen sich → Entladung = Erdbeben",
+          "• Beispiel: Pazifischer Feuerring"],
+         RED)
+    card(s, 0.3, 4.3, LEFT_W, 2.9,
+         "Arten von Plattengrenzen",
+         ["• Divergent: Platten entfernen sich → Vulkane",
+          "• Konvergent: stoßen zusammen → Gebirge",
+          "• Transform: gleiten aneinander → Erdbeben",
+          "• Beispiele: Vesuv, Eyjafjallajökull, Himalaya"],
+         ORANGE)
+    img_placeholder(s, "📷  Bild: Vulkan / Erdbeben")
 
 
-def slide_bedeutung(prs):
-    """Folie 9 – Bedeutung des Erdaufbaus (Person 2)"""
-    s = blank_slide(prs)
-    bg(s)
-    header_bar(s, "🌿  Bedeutung des Erdaufbaus für das Leben",
-               GREEN, "👤 Person 2  ·  Folie 9")
-
-    info_card(s, 0.3, 1.3, 6.1, 2.7,
-        "Magnetfeld schützt das Leben",
-        ["• Äußerer Kern erzeugt Magnetfeld",
-         "• Magnetfeld hält Sonnenwind ab",
-         "• Ohne Magnetfeld: Atmosphäre wäre",
-         "  weggepustet wie bei Mars",
-         "• → Kein Leben ohne Erdkern!"],
-        PURPLE)
-
-    info_card(s, 6.6, 1.3, 6.4, 2.7,
-        "Wärme & Energie",
-        ["• Erdinneres gibt Wärme ab",
-         "• Geothermie: nutzbare Energie",
-         "• Vulkane: fruchtbarer Boden",
-         "• Mineralien & Rohstoffe entstehen",
-         "  durch geologische Prozesse"],
-        ORANGE)
-
-    info_card(s, 0.3, 4.2, 6.1, 2.8,
-        "Plattentektonik & Lebensgrundlagen",
-        ["• Gebirge durch Plattenbewegung",
-         "  → Regen, Flüsse, Trinkwasser",
-         "• Mineralreiche Böden durch Vulkane",
-         "• Kohlenstoffkreislauf durch",
-         "  tektonische Prozesse reguliert",
-         "• → Stabiles Klima für Leben"],
-        GREEN)
-
-    info_card(s, 6.6, 4.2, 6.4, 2.8,
-        "Zusammenfassung",
-        ["• Kruste  → Lebensraum & Platten",
-         "• Mantel  → Konvektion & Energie",
-         "• Äuß. Kern → Magnetfeld",
-         "• Inn. Kern → Stabilität",
-         "Merksatz: tiefer = heißer,",
-         "dichter, mehr Druck"],
-        TEAL)
+def s_bedeutung(prs):
+    s = blank(prs); bg(s)
+    header(s, "🌿  Bedeutung für das Leben", GREEN, "👤 Person 2  ·  Folie 9")
+    card(s, 0.3, 1.25, LEFT_W, 2.9,
+         "Magnetfeld & Schutz",
+         ["• Erdkern erzeugt Magnetfeld",
+          "• Schützt vor gefährlichem Sonnenwind",
+          "• Ohne Magnetfeld → keine Atmosphäre",
+          "• → Kein Leben möglich (wie auf dem Mars)"],
+         PURPLE)
+    card(s, 0.3, 4.3, LEFT_W, 2.9,
+         "Wärme, Energie & Lebensgrundlagen",
+         ["• Geothermie: nutzbare Erdwärme",
+          "• Vulkane → fruchtbarer Boden",
+          "• Gebirge durch Platten → Wasser & Klima",
+          "• Kohlenstoffkreislauf durch Tektonik"],
+         GREEN)
+    img_placeholder(s, "📷  Bild: Leben auf der Erde")
 
 
-def slide_danke(prs):
-    s = blank_slide(prs)
-    bg(s)
+def s_zusammenfassung(prs):
+    s = blank(prs); bg(s)
+    header(s, "📊  Zusammenfassung", TEAL, None)
 
-    for radius, color in [
-        (3.5, RGBColor(0x0f,0x23,0x3d)),
-        (2.6, RGBColor(0x1e,0x40,0xaf)),
-        (1.8, RGBColor(0xfb,0x92,0x3c)),
-        (1.1, RGBColor(0xf8,0x71,0x71)),
-        (0.5, RGBColor(0xfb,0xbf,0x24)),
-    ]:
-        cx = 6.66; cy = 3.4
-        s.shapes.add_shape(9,
-            Inches(cx-radius), Inches(cy-radius),
-            Inches(radius*2), Inches(radius*2))
+    rows = [
+        ("🟢 Erdkruste",      "0–70 km",        "0–1.000°C",   "Fest",       "Tektonische Platten",   GREEN),
+        ("🔵 Ob. Mantel",     "70–660 km",       "1.000–1.600°C","Zähflüssig","Platten schwimmen drauf",BLUE),
+        ("🟠 Unt. Mantel",    "660–2.900 km",    "1.600–3.700°C","Fest",      "Konvektion",            ORANGE),
+        ("🔴 Äuß. Kern",      "2.900–5.150 km",  "4.000–5.000°C","Flüssig",  "Erzeugt Magnetfeld",    RED),
+        ("🟡 Inn. Kern",      "5.150–6.371 km",  "~5.500°C",    "Fest",       "3,6 Mio. bar Druck",    YELLOW),
+    ]
+
+    # header row
+    for i, h_txt in enumerate(["Schicht","Tiefe","Temperatur","Zustand","Besonderheit"]):
+        rect(s, 0.3 + i*2.52, 1.25, 2.47, 0.5, ACCENT)
+        tb(s, h_txt, 0.35 + i*2.52, 1.28, 2.4, 0.44,
+           size=13, bold=True, align=PP_ALIGN.CENTER)
+
+    for row_i, (name, tiefe, temp, zust, beson, col) in enumerate(rows):
+        y = 1.85 + row_i * 1.05
+        bg_col = CARD if row_i % 2 == 0 else RGBColor(0x0a,0x1c,0x35)
+        rect(s, 0.3, y, 12.6, 1.0, bg_col)
+        rect(s, 0.3, y, 0.06, 1.0, col)
+        for ci, val in enumerate([name, tiefe, temp, zust, beson]):
+            c = col if ci == 0 else WHITE
+            tb(s, val, 0.42 + ci*2.52, y+0.28, 2.4, 0.5,
+               size=14, bold=(ci==0), color=c, align=PP_ALIGN.CENTER)
+
+    tb(s, "Je tiefer → desto heißer, dichter und unter höherem Druck",
+       0.3, 7.0, 12.6, 0.4, size=14, color=TEAL,
+       align=PP_ALIGN.CENTER, italic=True)
+
+
+def s_danke(prs):
+    s = blank(prs); bg(s)
+    for r_in, col in [(3.5,RGBColor(0x0f,0x23,0x3d)),
+                      (2.6,RGBColor(0x1e,0x40,0xaf)),
+                      (1.8,RGBColor(0xfb,0x92,0x3c)),
+                      (1.1,RGBColor(0xf8,0x71,0x71)),
+                      (0.5,RGBColor(0xfb,0xbf,0x24))]:
+        cx,cy = 6.66, 3.4
+        s.shapes.add_shape(9, Inches(cx-r_in), Inches(cy-r_in),
+                           Inches(r_in*2), Inches(r_in*2))
         ov = s.shapes[-1]
-        ov.fill.solid(); ov.fill.fore_color.rgb = color
+        ov.fill.solid(); ov.fill.fore_color.rgb = col
         ov.line.fill.background()
-
     rect(s, 0, 0, 13.33, 7.5, RGBColor(0x0a,0x16,0x28))
-    # re-draw circles on top of bg rect — swap order
-    # (simpler: just use translucent bg)
-
-    textbox(s, "🌍", 5.9, 0.3, 1.5, 1.2, size=52, align=PP_ALIGN.CENTER)
-    textbox(s, "Danke fürs Zuhören!", 1.5, 1.6, 10.3, 1.3,
-            size=42, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
-    textbox(s, "Fragen?", 1.5, 2.85, 10.3, 0.8,
-            size=28, color=GRAY, align=PP_ALIGN.CENTER)
-
+    tb(s, "🌍", 5.9, 0.3, 1.5, 1.2, size=52, align=PP_ALIGN.CENTER)
+    tb(s, "Danke fürs Zuhören!", 1.5, 1.6, 10.3, 1.3,
+       size=42, bold=True, align=PP_ALIGN.CENTER)
+    tb(s, "Fragen?", 1.5, 2.85, 10.3, 0.8,
+       size=28, color=GRAY, align=PP_ALIGN.CENTER)
     rect(s, 2.5, 3.75, 8.33, 0.04, TEAL)
+    tb(s, "👤 Person 1  —  Entstehung · Erdkruste · Ob. Mantel · Unt. Mantel",
+       1.5, 4.05, 10.3, 0.5, size=13, color=P1, align=PP_ALIGN.CENTER)
+    tb(s, "👤 Person 2  —  Äuß. Kern · Inn. Kern · Vulkane & Erdbeben · Bedeutung",
+       1.5, 4.55, 10.3, 0.5, size=13, color=P2, align=PP_ALIGN.CENTER)
 
-    textbox(s, "Aufbau der Erde  ·  Erdkruste  ·  Erdmantel  ·  Erdkern",
-            1.5, 3.95, 10.3, 0.6, size=15, color=GRAY, align=PP_ALIGN.CENTER)
-
-    textbox(s, "👤 Person 1  —  Entstehung · Erdkruste · Ob. Mantel · Unt. Mantel",
-            1.5, 4.65, 10.3, 0.5, size=13, color=P1_COLOR, align=PP_ALIGN.CENTER)
-    textbox(s, "👤 Person 2  —  Äuß. Kern · Inn. Kern · Vulkane & Erdbeben · Bedeutung",
-            1.5, 5.15, 10.3, 0.5, size=13, color=P2_COLOR, align=PP_ALIGN.CENTER)
-
-
-# ── build ─────────────────────────────────────────────────────────────────────
 
 def main():
     prs = new_prs()
-
-    print("Slide 1: Titel...")
-    slide_title(prs)
-    print("Slide 2: Entstehung der Erde...")
-    slide_entstehung(prs)
-    print("Slide 3: Die Erdkruste...")
-    slide_erdkruste(prs)
-    print("Slide 4: Oberer Erdmantel...")
-    slide_ob_mantel(prs)
-    print("Slide 5: Unterer Erdmantel...")
-    slide_unt_mantel(prs)
-    print("Slide 6: Äußerer Erdkern...")
-    slide_auss_kern(prs)
-    print("Slide 7: Innerer Erdkern...")
-    slide_inn_kern(prs)
-    print("Slide 8: Vulkane & Erdbeben...")
-    slide_vulkane(prs)
-    print("Slide 9: Bedeutung...")
-    slide_bedeutung(prs)
-    print("Slide 10: Danke...")
-    slide_danke(prs)
-
+    steps = [
+        ("Titel",              s_titel),
+        ("Entstehung",         s_entstehung),
+        ("Erdkruste",          s_erdkruste),
+        ("Oberer Mantel",      s_ob_mantel),
+        ("Unterer Mantel",     s_unt_mantel),
+        ("Äußerer Kern",       s_auss_kern),
+        ("Innerer Kern",       s_inn_kern),
+        ("Vulkane & Erdbeben", s_vulkane),
+        ("Bedeutung",          s_bedeutung),
+        ("Zusammenfassung",    s_zusammenfassung),
+        ("Danke",              s_danke),
+    ]
+    for name, fn in steps:
+        print(f"  Folie: {name}...")
+        fn(prs)
     prs.save(OUT)
-    print(f"\nGespeichert: {OUT}")
-    print(f"10 Folien — Person 1: 2-5 | Person 2: 6-9")
-
+    print(f"\nGespeichert: {OUT}  ({len(steps)} Folien)")
 
 if __name__ == "__main__":
     main()
